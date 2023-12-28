@@ -50,6 +50,7 @@ class matrix:
 
         self.dimmer = PWM(ENABLE, freq=self.freq, duty_u16=0)
         self.dim()
+        self.update()
 
     def update(self):
         self.sm.put(self.matrix)
