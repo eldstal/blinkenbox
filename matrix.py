@@ -70,17 +70,29 @@ class matrix:
 
 
 if __name__ == "__main__":
-    m = matrix()
+    m = matrix(brightness=0)
 
     print("send")
-    m.update()
     m.clear()
-    sleep(1)
     m.update()
-    sleep(1)
-    m.set_matrix(array.array("I", [0xaaaaaaaa]*16))
-    m.update()
-    sleep(1)
-    m.set_matrix(array.array("I", [0x55555555]*16))
-    m.update()
+
+    fade_fraction = 1 / 32
+    fade = 0
+
+    display = array.array("I", [0xFFFF0000] * 8)
+    flip = array.array("I", [0x0000FFFF] * 8)
+
+    while True:
+        if fade > 1 or fade < 0:
+            fade_fraction = -fade_fraction
+        if fade < 0:
+            display, flip = flip, display
+        fade += fade_fraction
+        m.dim(fade)
+        m.set_matrix(array.array("I", display))
+        m.update()
+        sleep(0.05)
     print("done")
+    m.clear()
+    m.update()
+    sleep(1)
