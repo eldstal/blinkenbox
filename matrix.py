@@ -44,7 +44,7 @@ class matrix:
         self.sm.active(1)
         #OE.off()
 
-        self.matrix = array.array("I", [0xffffffff]*16)
+        self.matrix = array.array("I", [0xFFFFFFFF] * 8)
 
         self.dimmer = PWM(ENABLE, freq=self.freq, duty_u16=0)
         self.dim()
@@ -56,7 +56,7 @@ class matrix:
         self.matrix = arr
 
     def clear(self):
-        self.set_matrix(array.array("I", [0x0]*16))
+        self.set_matrix(array.array("I", [0x0] * 8))
 
     def dim(self, level=None):
         self.level = clamp(level or self.level)
