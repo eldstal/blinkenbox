@@ -3,12 +3,13 @@ from time import sleep
 import rp2
 import array
 
+# fmt: off
 @rp2.asm_pio(
     out_init=(rp2.PIO.OUT_LOW,),
     sideset_init=(rp2.PIO.OUT_LOW, rp2.PIO.OUT_LOW),
     fifo_join=rp2.PIO.JOIN_TX,
     out_shiftdir=rp2.PIO.SHIFT_RIGHT,
-    autopull=True
+    autopull=True,
 )
 def matrix_pio():
     label("wait_full")
@@ -37,12 +38,13 @@ class matrix:
     def __init__(self, brightness=0.55):
         self.level = clamp(brightness)
         self.freq = 500
-        SM0_EXECCTRL = 0x0cc
-        mem32[SM0_EXECCTRL] |= 0x0000001F # set up status == FIFO_FULL
+        SM0_EXECCTRL = 0x0CC
+        mem32[SM0_EXECCTRL] |= 0x0000001F  # set up status == FIFO_FULL
 
-        self.sm = rp2.StateMachine(0, matrix_pio, freq=2_000_000, out_base=Pin(DATA), sideset_base=Pin(LATCH))
+        self.sm = rp2.StateMachine(
+            0, matrix_pio, freq=2_000_000, out_base=Pin(DATA), sideset_base=Pin(LATCH)
+        )
         self.sm.active(1)
-        #OE.off()
 
         self.matrix = array.array("I", [0xFFFFFFFF] * 8)
 
@@ -66,11 +68,6 @@ class matrix:
         duty = int((1 - self.level) * 65536)
         self.dimmer.duty_u16(duty)
 
-    
-#@rp2.asm_pio(out_init=(rp2.PIO.OUT_LOW,rp2.PIO.OUT_LOW,rp2.PIO.OUT_LOW,rp2.PIO.OUT_LOW))
-#def full_send():
-#    pull()
-#    out(pins, 4) [31]
 
 if __name__ == "__main__":
     m = matrix()
