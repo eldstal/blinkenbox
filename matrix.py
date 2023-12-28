@@ -1,4 +1,4 @@
-from machine import Pin, mem32
+from machine import Pin, mem32, PWM
 from time import sleep
 import rp2
 import array
@@ -25,20 +25,26 @@ def matrix_pio():
 LATCH = Pin.board.GP0
 CLK = Pin.board.GP1
 DATA = Pin.board.GP2
-ENABLE = Pin(Pin.board.GP3, Pin.OUT)
+#ENABLE = Pin(Pin.board.GP3, Pin.OUT)
+OE = Pin(3, Pin.OUT)
 
 class matrix:
-    def __init__(self):
+    def __init__(self, lumen = 0.5):
+        self.lumen = lumen
+        self.freq = 500
         SM0_EXECCTRL = 0x0cc
         mem32[SM0_EXECCTRL] |= 0x0000001F # set up status == FIFO_FULL
 
-        self.sm = rp2.StateMachine(0, matrix_pio, freq=20_000_000, out_base=Pin(DATA), sideset_base=Pin(LATCH))
+        self.sm = rp2.StateMachine(0, matrix_pio, freq=2_000_000, out_base=Pin(DATA), sideset_base=Pin(LATCH))
         self.sm.active(1)
-        ENABLE.off()
+ #       ENABLE.off()
 
         self.matrix = array.array("I", [0xffffffff]*16)
 
-    def push_frame(self):
+        self.dimmer = PWM(OE, freq=self.freq, duty_u16=0)
+        self.dim(self.lumen)
+
+    def update(self):
         self.sm.put(self.matrix)
     
     def set_matrix(self, arr):
@@ -46,6 +52,17 @@ class matrix:
     
     def clear(self):
         self.set_matrix(array.array("I", [0x0]*16))
+
+    def dim(self, level):
+        level = min(level, 1.0)
+        level = max(level, 0)
+
+        print(f"Testing intensity {level}")
+
+        duty = int((1-level) * 65536)
+        self.dimmer.init(freq=self.freq, duty_u16=duty)
+
+    
 #@rp2.asm_pio(out_init=(rp2.PIO.OUT_LOW,rp2.PIO.OUT_LOW,rp2.PIO.OUT_LOW,rp2.PIO.OUT_LOW))
 #def full_send():
 #    pull()
@@ -55,14 +72,14 @@ if __name__ == "__main__":
     m = matrix()
 
     print("send")
-    m.push_frame()
+    m.update()
     m.clear()
     sleep(1)
-    m.push_frame()
+    m.update()
     sleep(1)
     m.set_matrix(array.array("I", [0xaaaaaaaa]*16))
-    m.push_frame()
+    m.update()
     sleep(1)
     m.set_matrix(array.array("I", [0x55555555]*16))
-    m.push_frame()
+    m.update()
     print("done")
