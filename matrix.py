@@ -7,6 +7,7 @@ import array
     out_init=(rp2.PIO.OUT_LOW,),
     sideset_init=(rp2.PIO.OUT_LOW, rp2.PIO.OUT_LOW),
     fifo_join=rp2.PIO.JOIN_TX,
+    out_shiftdir=rp2.PIO.SHIFT_RIGHT,
     autopull=True
 )
 def matrix_pio():
@@ -25,7 +26,7 @@ def matrix_pio():
 LATCH = Pin.board.GP0
 CLK = Pin.board.GP1
 DATA = Pin.board.GP2
-#ENABLE = Pin(Pin.board.GP3, Pin.OUT)
+#OE = Pin(Pin.board.GP3, Pin.OUT)
 OE = Pin(3, Pin.OUT)
 
 class matrix:
@@ -37,7 +38,7 @@ class matrix:
 
         self.sm = rp2.StateMachine(0, matrix_pio, freq=2_000_000, out_base=Pin(DATA), sideset_base=Pin(LATCH))
         self.sm.active(1)
- #       ENABLE.off()
+        #OE.off()
 
         self.matrix = array.array("I", [0xffffffff]*16)
 
