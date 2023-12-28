@@ -6,7 +6,7 @@ class Framebuf:
 
   def __init__(self):
     self.wpx = [ 0 ]*8
-    self.matrix = matrix.matrix(lumen=0.05)
+    self.matrix = matrix.matrix(brightness=0.05)
 
   def clear(self):
     self.wpx = [ 0 ]*8
