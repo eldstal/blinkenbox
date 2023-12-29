@@ -1,6 +1,7 @@
 from fb import Framebuf
 from rle import inflate_rle
 from time import sleep
+from util import auto_rewind, fullbright
 
 
 """
@@ -9,29 +10,31 @@ If multiple images are packed into a single file, they will be shown
 in a looping animation.§
 """
 
+class Video:
+    def __init__(self, source, fb=None, framerate = 10):
+        self.fb = fb or Framebuf()
+        self.src = source
+        self.frametime = 1/ framerate
 
-def display(buf, data, framerate=10):
-    """unpack image and write to display"""
-    if framerate:
-        frametime = 1 / framerate
-    while True:
-        for i, b in enumerate(inflate_rle(data)):
-            y = i // 16
-            x = i % 16
-            buf.set(x, y, int(b > 0))
-            if y % 16 == 0 and x == 0:
-                buf.flip()
-                if framerate:
-                    sleep(frametime)
-                    buf.clear()
-                else:
-                    return
+
+    def next_frame(self):
+        self.fb.clear()
+        for i in range(256):
+            y, x = divmod(i, 16)
+            self.fb.set(x, y, next(self.src))
+        self.fb.flip()
+        
+
+    def play(self):
+        while True:
+            self.next_frame()
+            sleep(self.frametime)
+
 
 
 if __name__ == "__main__":
     f = Framebuf()
     f.clear()
     f.flip()
-    with open("video", "rb") as img:
-        data = img.read()
-    display(f, data)
+    v = Video(fullbright(inflate_rle(auto_rewind("video"))), fb=f)
+    v.play()

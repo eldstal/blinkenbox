@@ -27,9 +27,9 @@ def inflate_rle(data):
     for i, byte in enumerate(data):
         if i % 2 == 0:
             b = byte
-        else:
-            for _ in range(byte):
-                yield b
+            continue
+        for _ in range(byte):
+            yield b
 
 
 if __name__ == "__main__":

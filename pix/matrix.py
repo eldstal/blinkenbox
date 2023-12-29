@@ -1,5 +1,6 @@
 from machine import Pin, mem32, PWM
 from time import sleep
+from util import clamp
 import rp2
 import array
 
@@ -28,10 +29,6 @@ LATCH = Pin.board.GP0
 CLK = Pin.board.GP1
 DATA = Pin.board.GP2
 ENABLE = Pin.board.GP3
-
-
-def clamp(n, minimum=0, maximum=1):
-    return min(maximum, max(minimum, n))
 
 
 class matrix:
