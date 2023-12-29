@@ -1,0 +1,6 @@
+video.py loads a file on the pi called "video", which is a run-length-encoded file representing a bunch of 16x16 8bpp grayscale format.
+
+To make a video file, take the images you wish to use and run `rle.py -o videofile image1 image2 image3...`.
+
+
+The workflow to make a suitable image differs per type, but if you have a grayscale 24-bit bitmap, the `tools/strip_channels.py` file can remove extra channels.
