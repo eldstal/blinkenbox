@@ -37,20 +37,20 @@ def clamp(n, minimum=0, maximum=1):
 class matrix:
     def __init__(self, brightness=0.55):
         self.level = clamp(brightness)
-        self.freq = 500
+        self.freq = 50000
         SM0_EXECCTRL = 0x0CC
         mem32[SM0_EXECCTRL] |= 0x0000001F  # set up status == FIFO_FULL
-
+        Pin(ENABLE, Pin.OUT).off()
         self.sm = rp2.StateMachine(
-            0, matrix_pio, freq=2_000_000, out_base=Pin(DATA), sideset_base=Pin(LATCH)
+            0, matrix_pio, freq=25_000_000, out_base=Pin(DATA), sideset_base=Pin(LATCH)
         )
         self.sm.active(1)
-
-        self.matrix = array.array("I", [0xFFFFFFFF] * 8)
+        
+        #self.matrix = array.array("I", [0xFFFFFFFF] * 8)
 
         self.dimmer = PWM(ENABLE, freq=self.freq, duty_u16=0)
         self.dim()
-        self.update()
+        #self.update()
 
     def update(self):
         self.sm.put(self.matrix)

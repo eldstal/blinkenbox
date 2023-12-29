@@ -56,12 +56,18 @@ class Snake:
             self.gameover = True
 
     def draw(self, display):
-        for x,y in self.history:
-            display.set(x, y, 1)
-        for x,y in [self.pos]:
-            display.set(x, y, 1)
-
-        display.flip()
+        for i in range(16):
+            display.set(i, 1, 1, i)
+        #for i, xy in enumerate(self.history):
+        #    intensity = len(self.history)-i
+        #    if intensity > 15:
+        #        intensity = 15
+        #    intensity_aft = 16 - intensity
+        #    x,y = xy
+        #    display.set(x, y, 1, intensity_aft)
+        #for x,y in [self.pos]:
+        #    display.set(x, y, 1, 15)
+        #display.flip()
 
         #display.push()
         #display.blur()
@@ -82,5 +88,5 @@ def main(display):
 
         if GAME.gameover:
             GAME.start()
-            display.clear()
+            #display.clear()
 
