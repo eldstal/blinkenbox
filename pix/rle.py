@@ -6,6 +6,7 @@ If called as a tool, can be used to compress and decompress
 RLE files.
 """
 
+
 def deflate_rle(data):
     prev = None
     count = 0
@@ -20,6 +21,7 @@ def deflate_rle(data):
     yield prev
     yield count
 
+
 def inflate_rle(data):
     b = 0
     for i, byte in enumerate(data):
@@ -29,15 +31,20 @@ def inflate_rle(data):
             for _ in range(byte):
                 yield b
 
+
 if __name__ == "__main__":
     import argparse
     import sys
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("input", type=argparse.FileType("rb"), nargs="*", default=[sys.stdin])
-    parser.add_argument("-o", "--output", type=argparse.FileType("wb", 0), nargs="?", default="-")
+    parser.add_argument(
+        "input", type=argparse.FileType("rb"), nargs="*", default=[sys.stdin]
+    )
+    parser.add_argument(
+        "-o", "--output", type=argparse.FileType("wb", 0), nargs="?", default="-"
+    )
     parser.add_argument("-x", "--extract", action="store_true")
-    args= parser.parse_args()
+    args = parser.parse_args()
 
     if args.extract:
         if len(args.input) > 1:
@@ -46,5 +53,3 @@ if __name__ == "__main__":
     else:
         for image in args.input:
             args.output.write(bytes(deflate_rle(image.read())))
-
-    
