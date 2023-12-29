@@ -37,7 +37,7 @@ def clamp(n, minimum=0, maximum=1):
 class matrix:
     def __init__(self, brightness=0.55):
         self.level = clamp(brightness)
-        self.freq = 50000
+        self.freq = 80000
         SM0_EXECCTRL = 0x0CC
         mem32[SM0_EXECCTRL] |= 0x0000001F  # set up status == FIFO_FULL
         Pin(ENABLE, Pin.OUT).off()
@@ -48,8 +48,8 @@ class matrix:
         
         #self.matrix = array.array("I", [0xFFFFFFFF] * 8)
 
-        self.dimmer = PWM(ENABLE, freq=self.freq, duty_u16=0)
-        self.dim()
+        #self.dimmer = PWM(ENABLE, freq=self.freq, duty_u16=0)
+        #self.dim()
         #self.update()
 
     def update(self):
