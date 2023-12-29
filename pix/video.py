@@ -34,4 +34,4 @@ if __name__ == "__main__":
     f.flip()
     with open("video", "rb") as img:
         data = img.read()
-    display(buf, data)
+    display(f, data)
