@@ -1,13 +1,10 @@
 from fb import Framebuf
-from rle import inflate_rle
+from file import fkopen
 from time import sleep
-from util import auto_rewind, fullbright
 
 
 """
-Display rle images.
-If multiple images are packed into a single file, they will be shown
-in a looping animation.§
+Display frekvensimages.
 """
 
 class Video:
@@ -31,10 +28,9 @@ class Video:
             sleep(self.frametime)
 
 
-
 if __name__ == "__main__":
     f = Framebuf()
     f.clear()
     f.flip()
-    v = Video(fullbright(inflate_rle(auto_rewind("video"))), fb=f)
+    v = Video(fkopen("video.fk"), fb=f, framerate=15)
     v.play()
