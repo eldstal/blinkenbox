@@ -1,0 +1,22 @@
+# auto pull verkar bara funka på ett word dvs max 32 bit.
+# ide:
+# vi skall bara skriva data ut, konfa så vi använder tx/rx fifo som tx fifo 8*32
+# 1. busy_wait på att fifo blir full
+# 2. skriv ut bit för bit
+# 3. loop busy_wait
+
+
+# TODO: använd side som klocka
+.wrap_target
+busy_wait:
+mov x, status # konfa status så det innehåller FIFO_FULL
+jmp !x, busy_wait
+
+set y, 7
+next_word:
+    set x, 31
+    bit_loop:
+        out pins, 1
+    jmp x--, bit_loop # går det att använda !OSRE istället för x?
+jmp y--, next_word
+.wrap

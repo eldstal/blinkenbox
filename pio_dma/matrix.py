@@ -1,6 +1,5 @@
 from machine import Pin, mem32, PWM
 from time import sleep
-from util import clamp
 import rp2
 import array
 
@@ -31,19 +30,30 @@ DATA = Pin.board.GP2
 ENABLE = Pin.board.GP3
 
 
+def clamp(n, minimum=0, maximum=1):
+    return min(maximum, max(minimum, n))
+
+
 class matrix:
     def __init__(self, brightness=0.55):
         self.level = clamp(brightness)
-        self.freq = 80000
+        self.freq = 500
         SM0_EXECCTRL = 0x0CC
         mem32[SM0_EXECCTRL] |= 0x0000001F  # set up status == FIFO_FULL
-        Pin(ENABLE, Pin.OUT).off()
+
         self.sm = rp2.StateMachine(
-            0, matrix_pio, freq=25_000_000, out_base=Pin(DATA), sideset_base=Pin(LATCH)
+            0, matrix_pio, freq=2_000_000, out_base=Pin(DATA), sideset_base=Pin(LATCH)
         )
         self.sm.active(1)
-        
-        #self.matrix = array.array("I", [0xFFFFFFFF] * 8)
+
+        if self.sm.tx_fifo() != 0:
+          print("==========================")
+          print("=====WARNING WARNING======")
+          print("=====FIFO WASN'T CLEAR====")
+          print("==========================")
+        print(f"{self.sm.tx_fifo()=}")
+
+        self.matrix = array.array("I", [0xFFFFFFFF] * 8)
 
         self.dimmer = PWM(ENABLE, freq=self.freq, duty_u16=0)
         self.dim()

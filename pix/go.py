@@ -9,9 +9,18 @@ fb = fb.Framebuf()
 #fb.set(12,5,1)
 #fb.flip()
 
+fb.clear()
+fb.dma_flip()
+
 # A nice little gradient
-for i in range(16):
-    fb.set(i%16, i//16, i)
+for x in range(16):
+  for y in range(16):
+    if (x < 8):
+      fb.set(x, y, x%2)
+    else:
+      fb.set(x, y, x%3 > 0)
+
+fb.dma_flip()
 
 while True:
   time.sleep(1)

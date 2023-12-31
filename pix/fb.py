@@ -1,7 +1,12 @@
 import matrix
 import array
+import uctypes
 
 from machine import Timer
+from machine import mem32
+
+import rp_devices as devs
+
 
 REMAP = [
     65535,    65508,    65479,    65451,    65422,    65394,    65365,    65337,
@@ -40,35 +45,55 @@ REMAP = [
 class Framebuf:
 
   def __init__(self):
+    self.frame_tim = Timer()
+    self.dma_tim = Timer()
     self.fb = []
-    self.tim = Timer()
-    for x in range(8):
-      self.fb.append([0] * 8)
-    self.matrix = matrix.matrix(brightness=0.10)
+    for i in range(8):
+      self.fb.append(bytearray(32+24))
+
+    self.FRAME_ADDR = array.array("L", [ uctypes.addressof(self.fb[f]) for f in range(8) ])
+
+    self.matrix = matrix.matrix(brightness=0.50)
     #self.start()
 
     self.flip_phase = 0
 
     self.bit_depth = 4
 
-    # tick -> frame number to show
-    self.intervals = [
-      (0,   0),
-      (1,   1),
-      (3,   2),
-      (7,   3),
-      (15,  4),
-      (31,  5),
-      (63,  6),
-      (127, 7),
-    ]
+    self.dma_setup()
 
-    self.autoflip()
+    self.set_frame(0)
+
+
+    # tick -> frame number to show
+    self.intervals = array.array("L",[
+      1,
+      2,
+      4,
+      8,
+      16,
+      32,
+
+      64,
+      128
+
+    ])
+
+    # Push frames to PIO periodically
+    #self.start_auto_dma()
+
+    # Swap framebuffer at set intervals
+    #self.autoflip()
 
   def clear(self):
-    for x in range(8):
-      for y in range(8):
-        self.fb[x][y] = 0
+    for f in range(8):
+      for w in range(8):
+        #self.fb[f][w] = 0
+        word_addr = self.FRAME_ADDR[f] + w*4
+        mem32[word_addr] = 0
+
+  def set_frame(self, f):
+    self.CURRENT_FRAME_ADDR = self.FRAME_ADDR[f]
 
   def remap_intensity(self, intensity):
 
@@ -95,14 +120,14 @@ class Framebuf:
 
 
   def set(self, x, y, intensity=15):
-    imax = 2**self.bit_depth
+    imax = 2**(self.bit_depth-1)
 
     #intensity = self.remap_intensity(intensity)
 
     x = x % 16
     y = y % 16
 
-    intensity = min(intensity, ( imax ) - 1)
+    intensity = min(intensity, ( imax ))
 
     # Index into wpx (word)
     w = 0
@@ -115,30 +140,79 @@ class Framebuf:
 
     b = (y%4)*8 + x%8
 
-    for x in range(8):
-      if intensity >> x & 1 == 1:
-        self.fb[x][w] |= (1 << b)
+
+    for f in range(8):
+      word_addr = self.FRAME_ADDR[f] + w*4
+
+      if intensity >> f & 1 == 1:
+        #self.fb[f][w] |= (1 << b)
+        mem32[word_addr] |= (1 << b)
       else:
-        self.fb[x][w] &= (1 << b) ^ 0xFFFFFFFF
+        #self.fb[f][w] &= (1 << b) ^ 0xFFFFFFFF
+        mem32[word_addr] &= (1 << b) ^ 0xFFFFFFFF
 
 
   def autoflip(self):
 
-    duration, frame = self.intervals[self.flip_phase]
+    duration = self.intervals[self.flip_phase]
 
-    if duration == 0:
-      freq = 0
-    else:
-      freq = 1e4 // duration
+    freq = 1e4 // (duration)
+    freq = int(freq * 1)
 
-    self.tim.init(freq=freq, mode=Timer.ONE_SHOT, callback=lambda t:self.autoflip())
+    self.frame_tim.init(freq=freq, mode=Timer.ONE_SHOT, callback=lambda t:self.autoflip())
 
     self.flip_phase = (self.flip_phase + 1) % self.bit_depth
 
-    self.push(frame)
+    self.set_frame(self.flip_phase)
+
+  def start_auto_dma(self):
+    freq = 1e1
+    self.dma_tim.init(freq=freq, mode=Timer.PERIODIC, callback=lambda t:self.dma_flip())
 
 
   
   def push(self, x):
-    self.matrix.set_matrix(array.array("I", self.fb[x]))
-    self.matrix.update()
+    #self.matrix.set_matrix(array.array("I", self.fb[x]))
+    #self.matrix.update()
+    self.set_frame(x)
+    self.dma_flip()
+
+  def dma_setup(self):
+
+    self.dma_chan = devs.DMA_CHANS[0]
+    self.dma = devs.DMA_DEVICE
+
+    self.dma_chan.WRITE_ADDR_REG = devs.PIO0_TX
+
+    # One frame per transfer
+    self.dma_chan.TRANS_COUNT_REG = 8
+
+  def dma_flip(self):
+    while self.dma_chan.CTRL_TRIG.BUSY:
+      time.sleep(0.001)
+
+    self.dma_chan.READ_ADDR_REG = self.CURRENT_FRAME_ADDR
+
+    # CTRL register:
+    # Read 32 bits at a time
+    # INCR_WRITE = 0 (always write to the same address)
+    # INCR_READ = 1
+    # DATA_SIZE = 2 (word)
+    # RING_SEL = 0 (loop read)
+    # RING_SIZE = log2(FRAMEBUF_SIZE)
+    # 
+    # Now: TREQ 0x3F for full fucking speeeed
+    # Later: Write only when DREQ_PIO0_TX0
+
+    self.dma_chan.CTRL_TRIG_REG=0
+    self.dma_chan.CTRL_TRIG.DATA_SIZE=2    # One 32b word at a time
+    self.dma_chan.CTRL_TRIG.INCR_READ = 1  # Eat the READ buffer
+    self.dma_chan.CTRL_TRIG.INCR_WRITE = 0 # Only one target word
+    self.dma_chan.CTRL_TRIG.RING_SEL = 0   # Wrap the READ buf
+    self.dma_chan.CTRL_TRIG.RING_SIZE = 5  # Wrap on 32 bytes (1 frame)
+
+    self.dma_chan.CTRL_TRIG.IRQ_QUIET = 1
+    self.dma_chan.CTRL_TRIG.TREQ_SEL = devs.DREQ_PIO0_TX0 # Send only when the PIO is ready to receive
+
+    self.dma_chan.CTRL_TRIG.EN = 1   # Go go go go go
+
