@@ -1,5 +1,11 @@
 ## Blinkenbox
 
+Look into `pix/` for the latest state of the art.
+
+```
+$ cd pix/
+$ make run
+```
 
 ## Pinout
 
