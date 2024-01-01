@@ -25,7 +25,7 @@ for x in range(len(intensities)):
 
 fb.flip()
 
-while True:
-  time.sleep(1)
+#while True:
+#  time.sleep(1)
 
 snake.main(fb)

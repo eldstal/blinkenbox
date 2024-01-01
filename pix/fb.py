@@ -74,7 +74,16 @@ class Framebuf:
     mem32[self.FRONT_BUFFER_PTR_ADDR] = self.FRONT_BUFFER
 
 
-    
+    #
+    # Pixel mapping memo table
+    # This maps an x/y of a pixel to the proper word and bit in one of the frame buffers
+    #
+    self.word_table = [ [ 0 for x in range(16) ] for y in range(16) ]
+    self.bit_table = [ [ 0 for x in range(16) ] for y in range(16) ]
+    for y in range(16):
+      for x in range(16):
+        self.word_table[y][x] = y//4 + (4 * (x >=8))
+        self.bit_table[y][x] = (y%4)*8 + x%8
     
 
 
@@ -109,27 +118,39 @@ class Framebuf:
   # Intensity between 0 and 255 (integer)
   def intensity_to_pwm(self, intensity):
 
-    intensity = max(0, intensity)
-    intensity = min(intensity, 255)
+    # Range clamping [0,255]
+    intensity = intensity & 0xFF
 
     n_steps = len(self.pwm)
-    step = (intensity * n_steps) // 256
+    step = (intensity * n_steps) >> 8
 
-    #print(f"{intensity=} -> {step=} -> {self.pwm[step]=:#x}")
     return self.pwm[step]
 
 
-  # Intensity is [0, 255]
+  # Given an x/y coordinate of a pixel
+  # returns the corresponding word index and bit index
   def set(self, x, y, intensity=255):
-    #imax = 2**(self.bit_depth-1)
 
-    #intensity = self.remap_intensity(intensity)
     pwm_bits = self.intensity_to_pwm(intensity)
 
-    x = x % 16
-    y = y % 16
+    w = self.word_table[y][x]
+    b = self.bit_table[y][x]
+    
+    for f in range(self.n_frames):
+      word_addr = self.BACK_BUFFER + f*32 + w*4
 
-    #intensity = min(intensity, ( imax ))
+      bit_value = ((pwm_bits >> f) & 1) << b
+
+      mem32[word_addr] = mem32[word_addr] & ((1 << b) ^ 0xFFFFFFFF) | bit_value
+        
+
+  # Intensity is [0, 255]
+  def slow_set(self, x, y, intensity=255):
+
+    pwm_bits = self.intensity_to_pwm(intensity)
+
+    x = x & 0xF
+    y = y & 0xF
 
     # Index into our framebuffer (word-width)
     w = 0

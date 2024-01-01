@@ -1,6 +1,7 @@
 from fb import Framebuf
 from file import fkopen
 from time import sleep
+import gc
 
 
 """
@@ -29,8 +30,12 @@ class Video:
 
 
 if __name__ == "__main__":
+
+    print(f"Memory before FB init: {gc.mem_free()}")
     f = Framebuf()
+    print(f"Memory after FB init: {gc.mem_free()}")
     f.clear()
     f.flip()
     v = Video(fkopen("video.fk"), fb=f, framerate=15)
+    print(f"Memory after video loaded init: {gc.mem_free()}")
     v.play()

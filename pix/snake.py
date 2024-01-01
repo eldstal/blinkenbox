@@ -66,7 +66,8 @@ class Snake:
             display.set(x, y, 32)
         for x,y in [self.pos]:
             display.set(x, y, 255)
-        #display.dma_flip()
+        display.flip()
+        display.clear()
 
         #display.push()
         #display.blur()
