@@ -2,6 +2,7 @@ import matrix
 import array
 import uctypes
 import micropython
+import time
 
 from machine import Timer
 from machine import mem32
@@ -48,22 +49,42 @@ class Framebuf:
   def __init__(self):
     self.frame_tim = Timer()
     self.dma_tim = Timer()
-    self.fb = []
-    for i in range(8):
-      self.fb.append(bytearray(32+24))
-
-    self.FRAME_ADDR = array.array("L", [ uctypes.addressof(self.fb[f]) for f in range(8) ])
 
     self.matrix = matrix.matrix(brightness=0.50)
+    
+    # Depth (in image frames) of PWM modulation
+    # Increase for better bit depth, but using more RAM (32B per frame)
+    self.n_frames = 4
+
+    self.fb = bytearray(32*self.n_frames)
+    self.FRAME_BASE_ADDR = uctypes.addressof(self.fb)
+
+    # A pointer to the frame address,
+    # which the trigger dma needs to copy to the main dma
+    self.fb_ptr = bytearray(4)
+    self.FRAME_BASE_PTR_ADDR = uctypes.addressof(self.fb_ptr)
+    mem32[self.FRAME_BASE_PTR_ADDR] = self.FRAME_BASE_ADDR
+    
     #self.start()
+    #self.flip_phase = 0
+    #self.bit_depth = 4
+    #self.set_frame(0)
 
-    self.flip_phase = 0
+    
+    
 
-    self.bit_depth = 4
 
-    self.dma_setup()
-
-    self.set_frame(0)
+    # PWM bit patterns for a pixel at a given intensity
+    # The first entry is the lowest intensity (off)
+    # The last entry is the highest supported intensity (on)
+    # Only the lowest n_frames bits will be used (and looped)
+    self.pwm = array.array("L", [
+        0x0,   # 0/4
+        0x1,   # 1/4
+        0x5,   # 2/4
+        0x7,   # 3/4
+        0xF,   # 4/4
+    ])
 
 
     # tick -> frame number to show
@@ -77,8 +98,9 @@ class Framebuf:
 
       64,
       128
-
     ])
+
+    self.dma_setup()
 
     # Push frames to PIO periodically
     self.start_auto_dma()
@@ -87,14 +109,11 @@ class Framebuf:
     #self.autoflip()
 
   def clear(self):
-    for f in range(8):
+    for f in range(self.n_frames):
       for w in range(8):
         #self.fb[f][w] = 0
-        word_addr = self.FRAME_ADDR[f] + w*4
+        word_addr = self.FRAME_BASE_ADDR + f*32 + w*4
         mem32[word_addr] = 0
-
-  def set_frame(self, f):
-    self.CURRENT_FRAME_ADDR = self.FRAME_ADDR[f]
 
   def remap_intensity(self, intensity):
 
@@ -119,18 +138,32 @@ class Framebuf:
 
     return pwm_signal
 
+  # Intensity between 0 and 255 (integer)
+  def intensity_to_pwm(self, intensity):
 
-  def set(self, x, y, intensity=15):
-    imax = 2**(self.bit_depth-1)
+    intensity = max(0, intensity)
+    intensity = min(intensity, 255)
+
+    n_steps = len(self.pwm)
+    step = (intensity * n_steps) // 256
+
+    #print(f"{intensity=} -> {step=} -> {self.pwm[step]=:#x}")
+    return self.pwm[step]
+
+
+  # Intensity is [0, 255]
+  def set(self, x, y, intensity=255):
+    #imax = 2**(self.bit_depth-1)
 
     #intensity = self.remap_intensity(intensity)
+    pwm_bits = self.intensity_to_pwm(intensity)
 
     x = x % 16
     y = y % 16
 
-    intensity = min(intensity, ( imax ))
+    #intensity = min(intensity, ( imax ))
 
-    # Index into wpx (word)
+    # Index into our framebuffer (word-width)
     w = 0
 
     # Right half of frame
@@ -142,10 +175,10 @@ class Framebuf:
     b = (y%4)*8 + x%8
 
 
-    for f in range(8):
-      word_addr = self.FRAME_ADDR[f] + w*4
+    for f in range(self.n_frames):
+      word_addr = self.FRAME_BASE_ADDR + f*32 + w*4
 
-      if intensity >> f & 1 == 1:
+      if pwm_bits >> f & 1 == 1:
         #self.fb[f][w] |= (1 << b)
         mem32[word_addr] |= (1 << b)
       else:
@@ -164,58 +197,97 @@ class Framebuf:
 
     self.flip_phase = (self.flip_phase + 1) % self.bit_depth
 
-    self.set_frame(self.flip_phase)
+    #self.set_frame(self.flip_phase)
 
   def start_auto_dma(self):
-    freq = 6e1
+    freq = 1e1
     #self.dma_tim.init(freq=freq, mode=Timer.PERIODIC, callback=lambda t: micropython.schedule(self.dma_flip, (1,)))
-    self.dma_tim.init(freq=freq, mode=Timer.PERIODIC, callback=lambda t: self.dma_flip())
+    #self.dma_tim.init(freq=freq, mode=Timer.PERIODIC, callback=lambda t: self.dma_flip())
+
+    # Kick start the trigger_dma, which will start the main_dma frame pump
+    # Once main_dma finishes one set of frames, the trigger_dma will restart etc etc etc
+    self.trigger_dma_chan.M0_CTRL_TRIG.EN = 1   # Go!
 
 
   
   def push(self, x):
     #self.matrix.set_matrix(array.array("I", self.fb[x]))
     #self.matrix.update()
-    self.set_frame(x)
+    #self.set_frame(x)
     self.dma_flip()
 
   def dma_setup(self):
 
-    self.dma_chan = devs.DMA_CHANS[0]
+    dma_chan_main = 0
+    dma_chan_trig = 1
+
     self.dma = devs.DMA_DEVICE
+    self.main_dma_chan = devs.DMA_CHANS[dma_chan_main]
+    self.trigger_dma_chan = devs.DMA_CHANS[dma_chan_trig]   # This is only used to trigger main_dma_chan
 
-    self.dma_chan.WRITE_ADDR_REG = devs.PIO0_TX
 
-    # One frame per transfer
-    self.dma_chan.TRANS_COUNT_REG = 8
+    #
+    # main_dma, used to push pixel data to PIO
+    #
 
-  def dma_flip(self, dc=None):
-    while self.dma_chan.CTRL_TRIG.BUSY:
-      time.sleep(0.001)
+    # The address of the register used to trigger the main dma
+    # This is a pointer to M3_READ_ADDR_TRIG_REG
+    #                                           channel                               mode   register
+    self.main_dma_trigger_reg = devs.DMA_BASE + dma_chan_main * devs.DMA_CHAN_WIDTH + 0x30 + 0xC;
 
-    self.dma_chan.READ_ADDR_REG = self.CURRENT_FRAME_ADDR
+    self.main_dma_chan.M3_WRITE_ADDR_REG = devs.PIO0_TX
 
-    # CTRL register:
-    # Read 32 bits at a time
-    # INCR_WRITE = 0 (always write to the same address)
-    # INCR_READ = 1
-    # DATA_SIZE = 2 (word)
-    # RING_SEL = 0 (loop read)
-    # RING_SIZE = log2(FRAMEBUF_SIZE)
-    # TREQ_SEL = Write only when DREQ_PIO0_TX0
+    # All the frames in one go!!
+    self.main_dma_chan.M3_TRANS_COUNT_REG = 8 * self.n_frames
 
-    self.dma_chan.CTRL_TRIG_REG=0
-    self.dma_chan.CTRL_TRIG.DATA_SIZE=2    # One 32b word at a time
-    self.dma_chan.CTRL_TRIG.INCR_READ = 1  # Eat the READ buffer
-    self.dma_chan.CTRL_TRIG.INCR_WRITE = 0 # Only one target word
-    self.dma_chan.CTRL_TRIG.RING_SEL = 0   # Wrap the READ buf
+    self.main_dma_chan.M3_CTRL_REG = 0
+    self.main_dma_chan.M3_CTRL.DATA_SIZE = 2  # One 32b word at a time
+    self.main_dma_chan.M3_CTRL.INCR_READ = 1  # Eat the READ buffer
+    self.main_dma_chan.M3_CTRL.INCR_WRITE = 0 # Only one target word
+    self.main_dma_chan.M3_CTRL.RING_SEL = 0   # Wrap the READ buf
 
     # Ideally, we'd wrap on 32 bytes (ring_size=5), but the DMA controller goes craaaazy
-    #self.dma_chan.CTRL_TRIG.RING_SIZE = 5  # Wrap on 32 bytes (1 frame)
-    self.dma_chan.CTRL_TRIG.RING_SIZE = 0  # Don't wrap. We just reset the source address each flip
+    #self.dma_chan.CTRL.RING_SIZE = 5  # Wrap on 32 bytes (1 frame)
+    self.main_dma_chan.M3_CTRL.RING_SIZE = 0  # Don't wrap. We just reset the source address each flip
 
-    self.dma_chan.CTRL_TRIG.IRQ_QUIET = 1
-    self.dma_chan.CTRL_TRIG.TREQ_SEL = devs.DREQ_PIO0_TX0 # Send only when the PIO is ready to receive
+    self.main_dma_chan.M3_CTRL.IRQ_QUIET = 1
+    self.main_dma_chan.M3_CTRL.TREQ_SEL = devs.DREQ_PIO0_TX0 # Send only when the PIO is ready to receive
 
-    self.dma_chan.CTRL_TRIG.EN = 1   # Go go go go go
+    self.main_dma_chan.M3_CTRL.CHAIN_TO = dma_chan_trig # On completion, start the trigger_dma
 
+    self.main_dma_chan.M3_CTRL.EN = 1   # Enabled, but won't start just yet.
+
+
+    #
+    # trigger_dma, used to start main_dma every time it finishes
+    #
+
+    # The READ_ADDRESS register of mode3 of the main DMA
+    # When this register is written, it will trigger the main DMA to perform another push of all frames to PIO.
+    self.trigger_dma_chan.M0_WRITE_ADDR_REG = self.main_dma_trigger_reg
+
+    # Copy the framebuffer address, so that the pixel push starts from there
+    self.trigger_dma_chan.M0_READ_ADDR_REG = self.FRAME_BASE_PTR_ADDR
+
+   # All the frames in one go!!
+    self.trigger_dma_chan.M0_TRANS_COUNT_REG = 1
+
+    self.trigger_dma_chan.M0_CTRL_TRIG_REG=0
+    self.trigger_dma_chan.M0_CTRL_TRIG.DATA_SIZE=2    # One 32b word (the address register)
+    self.trigger_dma_chan.M0_CTRL_TRIG.INCR_READ = 0  # Always read from the same place
+    self.trigger_dma_chan.M0_CTRL_TRIG.INCR_WRITE = 0 # Always write to the same place
+    self.trigger_dma_chan.M0_CTRL_TRIG.RING_SEL = 0   # Doesn't matter
+    self.trigger_dma_chan.M0_CTRL_TRIG.RING_SIZE = 0  # Don't wrap.
+    self.trigger_dma_chan.M0_CTRL_TRIG.IRQ_QUIET = 1  # No interrupts
+    self.trigger_dma_chan.M0_CTRL_TRIG.TREQ_SEL = 0x3F    # as fast as fast can be
+    self.trigger_dma_chan.M0_CTRL_TRIG.CHAIN_TO = dma_chan_trig  # Don't trigger any other channel
+
+
+
+  def dma_flip(self, dc=None):
+    while self.main_dma_chan.M3_CTRL.BUSY:
+      time.sleep(0.001)
+
+
+    # On alias mode 3, the write to READ_ADDR_REG is what triggers the DMA channel to start.
+    self.main_dma_chan.M3_READ_ADDR_TRIG_REG = self.FRAME_BASE_ADDR

@@ -52,13 +52,37 @@ DMA_CTRL_TRIG_FIELDS = {
     "EN":           0<<BF_POS | 1<<BF_LEN | BFUINT32
 }
 # Channel-specific DMA registers
+
 DMA_CHAN_REGS = {
-    "READ_ADDR_REG":       0x00|UINT32,
-    "WRITE_ADDR_REG":      0x04|UINT32,
-    "TRANS_COUNT_REG":     0x08|UINT32,
-    "CTRL_TRIG_REG":       0x0c|UINT32,
-    "CTRL_TRIG":          (0x0c,DMA_CTRL_TRIG_FIELDS)
+    # This is at offset 0x00, and is triggered by CTRL_TRIG_REG
+    "M0_READ_ADDR_REG":       0x00|UINT32,
+    "M0_WRITE_ADDR_REG":      0x04|UINT32,
+    "M0_TRANS_COUNT_REG":     0x08|UINT32,
+    "M0_CTRL_TRIG_REG":       0x0c|UINT32,
+    "M0_CTRL_TRIG":          (0x0c,DMA_CTRL_TRIG_FIELDS),
+
+    # This is an alias of M0, and is triggered by TRANS_COUNT_REG
+    "M1_CTRL_REG":            0x10|UINT32,
+    "M1_CTRL":               (0x10,DMA_CTRL_TRIG_FIELDS),
+    "M1_READ_ADDR_REG":       0x14|UINT32,
+    "M1_WRITE_ADDR_REG":      0x18|UINT32,
+    "M1_TRANS_COUNT_TRIG_REG":     0x1C|UINT32,
+
+    # This is an alias of M0, and is triggered by WRITE_ADDR_REG
+    "M2_CTRL_REG":            0x20|UINT32,
+    "M2_CTRL":               (0x20,DMA_CTRL_TRIG_FIELDS),
+    "M2_TRANS_COUNT_REG":     0x24|UINT32,
+    "M2_READ_ADDR_REG":       0x28|UINT32,
+    "M2_WRITE_ADDR_TRIG_REG": 0x2C|UINT32,
+
+    # This is an alias of M0, and is triggered by READ_ADDR_REG
+    "M3_CTRL_REG":            0x30|UINT32,
+    "M3_CTRL":               (0x30,DMA_CTRL_TRIG_FIELDS),
+    "M3_WRITE_ADDR_REG":      0x34|UINT32,
+    "M3_TRANS_COUNT_REG":     0x38|UINT32,
+    "M3_READ_ADDR_TRIG_REG":  0x3C|UINT32,
 }
+
 # General DMA registers
 DMA_REGS = {
     "INTR":               0x400|UINT32,

@@ -39,7 +39,7 @@ class matrix:
         mem32[SM0_EXECCTRL] |= 0x0000001F  # set up status == FIFO_FULL
         Pin(ENABLE, Pin.OUT).off()
         self.sm = rp2.StateMachine(
-            0, matrix_pio, freq=1_000_000, out_base=Pin(DATA), sideset_base=Pin(LATCH)
+            0, matrix_pio, freq=25_000_000, out_base=Pin(DATA), sideset_base=Pin(LATCH)
         )
         self.sm.active(1)
         
