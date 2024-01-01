@@ -1,0 +1,215 @@
+<!doctype html>
+<html>
+  <head>
+    <script src="https://pixijs.download/release/pixi.min.js"></script>
+  </head>
+  <body>
+    <script>
+//import * as PIXI from 'pixi.js';
+//https://pixijs.com/playground?source=eyJjb2RlIjoiaW1wb3J0ICogYXMgUElYSSBmcm9tICdwaXhpLmpzJztcblxuY29uc3QgYXBwID0gbmV3IFBJWEkuQXBwbGljYXRpb24oeyBiYWNrZ3JvdW5kOiAnIzJFMjgzNicsIHJlc2l6ZVRvOiB3aW5kb3cgfSk7XG5cbmRvY3VtZW50LmJvZHkuYXBwZW5kQ2hpbGQoYXBwLnZpZXcpO1xuXG5jb25zdCBjb250YWluZXIgPSBuZXcgUElYSS5Db250YWluZXIoKTtcbmNvbnN0IGJ1dHRvbnMgPSBuZXcgUElYSS5Db250YWluZXIoKTtcbmNvbnN0IGFjdGl2ZSA9IDB4RjZCRDYwO1xuY29uc3QgaW5hY3RpdmUgPSAweEI1QkVDNjtcbmNvbnN0IGNsZWFyID0gMHhGMTUxNTY7XG5cblxuYXBwLnN0YWdlLmFkZENoaWxkKGNvbnRhaW5lcik7XG5hcHAuc3RhZ2UuYWRkQ2hpbGQoYnV0dG9ucyk7XG5hcHAuc3RhZ2UuZXZlbnRNb2RlID0gJ3N0YXRpYyc7XG5hcHAuc3RhZ2UuaGl0QXJlYSA9IGFwcC5zY3JlZW47XG5hcHAuc3RhZ2VcbiAgICAub24oJ3BvaW50ZXJkb3duJywgcG9pbnRlckRvd24pXG4gICAgLm9uKCdwb2ludGVydXAnLCBwb2ludGVyVXApXG4gICAgLm9uKCdwb2ludGVydXBvdXRzaWRlJywgcG9pbnRlclVwKVxuICAgIC5vbigncG9pbnRlcm1vdmUnLCBwb2ludGVyTW92ZSk7XG5cbmxldCBkcmFnZ2luZyA9IGZhbHNlO1xubGV0IHBhaW50ID0gYWN0aXZlO1xuXG4vLyBDcmVhdGUgYSA1eDUgZ3JpZCBvZiBidW5uaWVzXG5mb3IgKGxldCB5ID0gMDsgeSA8IDE2OyB5KyspXG57XG4gICAgZm9yKGxldCB4ID0gMDsgeCA8IDE2OyB4Kyspe1xuICAgICAgICAvL2NvbnN0IGJ1bm55ID0gbmV3IFBJWEkuU3ByaXRlKHRleHR1cmUpO1xuICAgICAgICAvL2J1bm55LlxuICAgICAgICBjb25zdCBnciAgPSBuZXcgUElYSS5HcmFwaGljcygpO1xuICAgICAgICBnci54ID0geDtcbiAgICAgICAgZ3IueSA9IHk7XG4gICAgICAgIGRyYXdQaXhlbChnciwgaW5hY3RpdmUpO1xuXG4gICAgICAgIC8vYnVubnkuYW5jaG9yLnNldCgwLjUpO1xuICAgICAgICAvL2J1bm55LnggPSAoaSAlIDUpICogNDA7XG4gICAgICAgIC8vYnVubnkueSA9IE1hdGguZmxvb3IoaSAvIDUpICogNDA7XG4gICAgICAgIC8vZ3Iub24oKVxuICAgICAgICAvL2dyLmV2ZW50TW9kZSA9IFwic3RhdGljXCI7XG4gICAgICAgIC8vZ3Iub24oXCJwb2ludGVyZG93blwiLG9uUGl4ZWxEb3duKTtcblxuICAgICAgICBjb250YWluZXIuYWRkQ2hpbGQoZ3IpO1xuICAgIH1cblxufVxuY29uc3QgcGFpbnRCdXR0b24gPSBjcmVhdGVCdXR0b24oXCJEcmF3XCIsIDAsIG9uUGFpbnRCdXR0b25Eb3duLCBwYWludCk7XG5jb25zdCBjbGVhckJ1dHRvbiA9IGNyZWF0ZUJ1dHRvbihcIkNsZWFyXCIsIDgwLCBvbkNsZWFyQnV0dG9uRG93biwgY2xlYXIpO1xuXG5idXR0b25zLmFkZENoaWxkKHBhaW50QnV0dG9uKTtcbmJ1dHRvbnMuYWRkQ2hpbGQocGFpbnRCdXR0b24udGV4dCk7XG5cbmJ1dHRvbnMuYWRkQ2hpbGQoY2xlYXJCdXR0b24pO1xuYnV0dG9ucy5hZGRDaGlsZChjbGVhckJ1dHRvbi50ZXh0KTtcblxuY29udGFpbmVyLnggPSBhcHAuc2NyZWVuLndpZHRoIC8gMjtcbmNvbnRhaW5lci55ID0gYXBwLnNjcmVlbi5oZWlnaHQgLyAyO1xuXG4vLyBDZW50ZXIgcGl4ZWwgYXJyYXkgaW4gbG9jYWwgY29udGFpbmVyIGNvb3JkaW5hdGVzXG5jb250YWluZXIucGl2b3QueCA9IGNvbnRhaW5lci53aWR0aCAvIDI7XG5jb250YWluZXIucGl2b3QueSA9IGNvbnRhaW5lci5oZWlnaHQgLyAyO1xuXG5sZXQgbWF4WSA9IDA7XG5mb3IoY29uc3QgcGl4ZWwgb2YgY29udGFpbmVyLmNoaWxkcmVuKXtcbiAgICBpZiggbWF4WSA8IHBpeGVsLmdldEJvdW5kcygpLnkpe1xuICAgICAgICBtYXhZID0gcGl4ZWwuZ2V0Qm91bmRzKCkueVxuICAgIH1cbn1cbmNvbnNvbGUubG9nKFwibWF4eVwiICsgbWF4WSk7XG5jb25zb2xlLmxvZyhjb250YWluZXIueSk7XG5idXR0b25zLnkgPSBtYXhZKzYwOyBcbmJ1dHRvbnMueCA9IGFwcC5zY3JlZW4ud2lkdGggLyAyO1xuXG4vLyBDZW50ZXIgcGl4ZWwgYXJyYXkgaW4gbG9jYWwgY29udGFpbmVyIGNvb3JkaW5hdGVzXG5idXR0b25zLnBpdm90LnggPSBidXR0b25zLndpZHRoIC8gMjtcbmJ1dHRvbnMucGl2b3QueSA9IGJ1dHRvbnMuaGVpZ2h0IC8gMjtcblxuZnVuY3Rpb24gY3JlYXRlQnV0dG9uKHRleHQsIHgsIGNhbGxiYWNrLCBjb2xvcil7XG4gICAgY29uc3QgYnV0dG9uID0gbmV3IFBJWEkuR3JhcGhpY3MoKTtcbiAgICBidXR0b24ueCA9IHg7XG4gICAgYnV0dG9uLnkgPSAwO1xuICAgIGJ1dHRvbi5ldmVudE1vZGUgPSBcInN0YXRpY1wiO1xuICAgIGJ1dHRvbi5vbihcInBvaW50ZXJkb3duXCIsIGNhbGxiYWNrKTtcbiAgICBkcmF3QnV0dG9uKGJ1dHRvbixjb2xvcik7XG5cbiAgICBidXR0b24udGV4dCA9IG5ldyBQSVhJLlRleHQodGV4dCwge2ZvbnQ6ICcyMHB4IEFyaWFsJywgZmlsbDogMHhGRkZGRkZ9KTtcbiAgICAvL3RleHQgPSBuZXcgUElYSS5UZXh0KCdYWFgnLCB7Zm9udDogJzIwcHggQXJpYWwnLCBmaWxsOiAweEZGRkZGRn0pO1xuICAgIGJ1dHRvbi50ZXh0LnggPSBidXR0b24uZ2V0Qm91bmRzKCkud2lkdGgvMi1idXR0b24udGV4dC5nZXRCb3VuZHMoKS53aWR0aC8yK3gqMjtcbiAgICBidXR0b24udGV4dC55ID0gYnV0dG9uLmdldEJvdW5kcygpLmhlaWdodC8yLWJ1dHRvbi50ZXh0LmdldEJvdW5kcygpLmhlaWdodC8yO1xuXG4gICAgLy9idXR0b24udGV4dC5ldmVudE1vZGUgPSBcInN0YXRpY1wiO1xuICAgIGJ1dHRvbi50ZXh0LmludGVyYWN0aXZlID0gdHJ1ZTtcbiAgICBidXR0b24udGV4dC5idXR0b25Nb2RlID0gdHJ1ZTtcbiAgICBidXR0b24udGV4dC5vbihcInBvaW50ZXJkb3duXCIsY2FsbGJhY2spO1xuXG4gICAgcmV0dXJuIGJ1dHRvbjtcbn1cblxuZnVuY3Rpb24gZHJhd1BpeGVsKHBpeGVsLCBjb2xvcil7XG4gICAgcGl4ZWwuY29sb3IgPSBjb2xvcjtcbiAgICBwaXhlbC5iZWdpbkZpbGwoY29sb3IpO1xuICAgIHBpeGVsLmRyYXdDaXJjbGUocGl4ZWwueCogMzAsIHBpeGVsLnkqIDMwLCAxMCk7XG4gICAgcGl4ZWwuZW5kRmlsbCgpO1xufVxuXG5mdW5jdGlvbiBkcmF3QnV0dG9uKGJ1dHRvbiwgY29sb3Ipe1xuICAgIGJ1dHRvbi5iZWdpbkZpbGwoY29sb3IpO1xuICAgIGJ1dHRvbi5kcmF3UmVjdChidXR0b24ueCwgYnV0dG9uLnksIDEyMCwgNDApO1xuICAgIGJ1dHRvbi5lbmRGaWxsKCk7XG59XG5cbmZ1bmN0aW9uIG9uUGl4ZWxEb3duKClcbntcbiAgICB0aGlzLmFscGhhID0gMC41O1xuICAgIGNvbnRhaW5lci5jaGlsZHJlblswXTtcbiAgICBjb25zb2xlLmxvZyhcInggXCIgKyB0aGlzLnggKyBcInlcIiArIHRoaXMueSk7XG59XG5cbmZ1bmN0aW9uIG9uQ2xlYXJCdXR0b25Eb3duKCl7XG4gICAgY29uc29sZS5sb2coXCJjbGVhclwiKTtcbiAgICBmb3IoY29uc3QgcGl4ZWwgb2YgY29udGFpbmVyLmNoaWxkcmVuKXtcbiAgICAgICAgZHJhd1BpeGVsKHBpeGVsLCBpbmFjdGl2ZSk7XG4gICAgfVxufVxuXG5mdW5jdGlvbiBvblBhaW50QnV0dG9uRG93bigpXG57XG4gICAgY29uc29sZS5sb2coXCJidXR0b24gZG93blwiKTtcbiAgICBpZihwYWludCA9PSBhY3RpdmUpe1xuICAgICAgICBwYWludCA9IGluYWN0aXZlO1xuICAgICAgICBwYWludEJ1dHRvbi50ZXh0LnRleHQgPSBcIkVyYXNlXCI7XG4gICAgfWVsc2V7XG4gICAgICAgIHBhaW50ID0gYWN0aXZlO1xuICAgICAgICBwYWludEJ1dHRvbi50ZXh0LnRleHQgPSBcIkRyYXdcIjtcbiAgICB9XG4gICAgZHJhd0J1dHRvbihwYWludEJ1dHRvbiwgcGFpbnQpO1xufVxuXG5mdW5jdGlvbiBwb2ludGVyTW92ZSh7IGdsb2JhbDogeyB4LCB5IH0gfSlcbntcbiAgICBpZiAoZHJhZ2dpbmcpXG4gICAge1xuICAgICAgICBcbiAgICAgICAgZm9yKGNvbnN0IHBpeGVsIG9mIGNvbnRhaW5lci5jaGlsZHJlbil7XG4gICAgICAgICAgICAvL2NvbnNvbGUubG9nKHBpeGVsLnBvc2l0aW9uLnNjb3BlLndvcmxkVHJhbnNmb3JtKTtcbiAgICAgICAgICAgIGNvbnN0IHAgPSBwaXhlbC5nZXRCb3VuZHMoKTtcbiAgICAgICAgICAgIC8vY29uc29sZS5sb2cocC54KTtcbiAgICAgICAgICAgIGlmKChNYXRoLmFicyh4LXAueC1wLndpZHRoLzIpIDwgIChwLndpZHRoLzIpKSAmJlxuICAgICAgICAgICAgICAgIChNYXRoLmFicyh5LXAueS1wLmhlaWdodC8yKSA8ICAocC5oZWlnaHQvMikpKVxuICAgICAgICAgICAge1xuICAgICAgICAgICAgICAgIGNvbnNvbGUubG9nKHApO1xuICAgICAgICAgICAgICAgIGRyYXdQaXhlbChwaXhlbCwgcGFpbnQpO1xuICAgICAgICAgICAgfVxuICAgICAgICAgICAgXG4gICAgICAgIH1cbiAgICAgICAgY29uc29sZS5sb2coXCJ4OlwiICsgeCArIFwiLHk6XCIgK3kpO1xuICAgIH1cbn1cblxuXG5mdW5jdGlvbiBwb2ludGVyRG93bihldmVudClcbntcbiAgICBkcmFnZ2luZyA9IHRydWU7XG4gICAgcG9pbnRlck1vdmUoZXZlbnQpO1xufVxuXG5mdW5jdGlvbiBwb2ludGVyVXAoZXZlbnQpXG57XG4gICAgZHJhZ2dpbmcgPSBmYWxzZTtcbn1cbi8vIExpc3RlbiBmb3IgYW5pbWF0ZSB1cGRhdGVcbi8qYXBwLnRpY2tlci5hZGQoKGRlbHRhKSA9Plxue1xuICAgIC8vIHJvdGF0ZSB0aGUgY29udGFpbmVyIVxuICAgIC8vIHVzZSBkZWx0YSB0byBjcmVhdGUgZnJhbWUtaW5kZXBlbmRlbnQgdHJhbnNmb3JtXG4gICAgY29udGFpbmVyLnJvdGF0aW9uIC09IDAuMDEgKiBkZWx0YTtcbn0pOyovXG4ifQ%3D%3D
+const app = new PIXI.Application({ background: '#2E2836', resizeTo: window });
+
+document.body.appendChild(app.view);
+
+const container = new PIXI.Container();
+const buttons = new PIXI.Container();
+const active = 0xF6BD60;
+const inactive = 0xB5BEC6;
+const clear = 0xF15156;
+
+
+app.stage.addChild(container);
+app.stage.addChild(buttons);
+app.stage.eventMode = 'static';
+app.stage.hitArea = app.screen;
+app.stage
+    .on('pointerdown', pointerDown)
+    .on('pointerup', pointerUp)
+    .on('pointerupoutside', pointerUp)
+    .on('pointermove', pointerMove);
+
+let dragging = false;
+let paint = active;
+
+// Create a 5x5 grid of bunnies
+for (let y = 0; y < 16; y++)
+{
+    for(let x = 0; x < 16; x++){
+        //const bunny = new PIXI.Sprite(texture);
+        //bunny.
+        const gr  = new PIXI.Graphics();
+        gr.x = x;
+        gr.y = y;
+        drawPixel(gr, inactive);
+
+        //bunny.anchor.set(0.5);
+        //bunny.x = (i % 5) * 40;
+        //bunny.y = Math.floor(i / 5) * 40;
+        //gr.on()
+        //gr.eventMode = "static";
+        //gr.on("pointerdown",onPixelDown);
+
+        container.addChild(gr);
+    }
+
+}
+const paintButton = createButton("Draw", 0, onPaintButtonDown, paint);
+const clearButton = createButton("Clear", 80, onClearButtonDown, clear);
+
+buttons.addChild(paintButton);
+buttons.addChild(paintButton.text);
+
+buttons.addChild(clearButton);
+buttons.addChild(clearButton.text);
+
+container.x = app.screen.width / 2;
+container.y = app.screen.height / 2;
+
+// Center pixel array in local container coordinates
+container.pivot.x = container.width / 2;
+container.pivot.y = container.height / 2;
+
+let maxY = 0;
+for(const pixel of container.children){
+    if( maxY < pixel.getBounds().y){
+        maxY = pixel.getBounds().y
+    }
+}
+console.log("maxy" + maxY);
+console.log(container.y);
+buttons.y = maxY+60; 
+buttons.x = app.screen.width / 2;
+
+// Center pixel array in local container coordinates
+buttons.pivot.x = buttons.width / 2;
+buttons.pivot.y = buttons.height / 2;
+
+function createButton(text, x, callback, color){
+    const button = new PIXI.Graphics();
+    button.x = x;
+    button.y = 0;
+    button.eventMode = "static";
+    button.on("pointerdown", callback);
+    drawButton(button,color);
+
+    button.text = new PIXI.Text(text, {font: '20px Arial', fill: 0xFFFFFF});
+    //text = new PIXI.Text('XXX', {font: '20px Arial', fill: 0xFFFFFF});
+    button.text.x = button.getBounds().width/2-button.text.getBounds().width/2+x*2;
+    button.text.y = button.getBounds().height/2-button.text.getBounds().height/2;
+
+    //button.text.eventMode = "static";
+    button.text.interactive = true;
+    button.text.buttonMode = true;
+    button.text.on("pointerdown",callback);
+
+    return button;
+}
+
+function drawPixel(pixel, color){
+    pixel.color = color;
+    pixel.beginFill(color);
+    pixel.drawCircle(pixel.x* 30, pixel.y* 30, 10);
+    pixel.endFill();
+}
+
+function drawButton(button, color){
+    button.beginFill(color);
+    button.drawRect(button.x, button.y, 120, 40);
+    button.endFill();
+}
+
+function onPixelDown()
+{
+    this.alpha = 0.5;
+    container.children[0];
+    console.log("x " + this.x + "y" + this.y);
+}
+
+function onClearButtonDown(){
+    console.log("clear");
+    for(const pixel of container.children){
+        drawPixel(pixel, inactive);
+    }
+    sendMessage(createFrameObj());
+}
+
+function onPaintButtonDown()
+{
+    console.log("button down");
+    if(paint == active){
+        paint = inactive;
+        paintButton.text.text = "Erase";
+    }else{
+        paint = active;
+        paintButton.text.text = "Draw";
+    }
+    drawButton(paintButton, paint);
+}
+
+function createFrameObj(){
+    frame = {};
+    for(const pixel of container.children){
+        console.log(pixel);
+        console.log(pixel.x)
+        if(frame[pixel.y] == undefined){
+            frame[pixel.y] = {};
+        }
+        frame[pixel.y][pixel.x] = (pixel.color == active) ? 1 : 0;
+    }
+    console.log(frame);
+    return frame;
+}
+
+function pointerMove({ global: { x, y } })
+{
+    if (dragging)
+    {
+        
+        for(const pixel of container.children){
+            //console.log(pixel.position.scope.worldTransform);
+            const p = pixel.getBounds();
+            //console.log(p.x);
+            if((p.x-5<= x && x <= p.x+p.width+5) &&
+                (p.y-5<= y && y <= p.y+p.height+5))
+            {
+                if(pixel.color != paint){
+                    drawPixel(pixel, paint);
+                    sendMessage(createFrameObj());
+                }
+                break;
+            }
+            
+        }
+        console.log("x:" + x + ",y:" +y);
+    }
+}
+
+
+function pointerDown(event)
+{
+    dragging = true;
+    pointerMove(event);
+}
+
+function pointerUp(event)
+{
+    dragging = false;
+}
+// Listen for animate update
+/*app.ticker.add((delta) =>
+{
+    // rotate the container!
+    // use delta to create frame-independent transform
+    container.rotation -= 0.01 * delta;
+});*/
+
+//********************WEB SOCKET STUFF**************************
+
+let ws = new WebSocket("ws://localhost:8000/ws");
+function sendMessage(data) 
+{
+    ws.send(JSON.stringify(data));
+}
+    </script>
+  </body>
+</html>
