@@ -37,7 +37,7 @@ def clamp(n, minimum=0, maximum=1):
 class matrix:
     def __init__(self, brightness=0.55):
         self.level = clamp(brightness)
-        self.freq = 500
+        self.freq = 50000
         SM0_EXECCTRL = 0x0CC
         mem32[SM0_EXECCTRL] |= 0x0000001F  # set up status == FIFO_FULL
 
@@ -47,10 +47,10 @@ class matrix:
         self.sm.active(1)
 
         if self.sm.tx_fifo() != 0:
-          print("==========================")
-          print("=====WARNING WARNING======")
-          print("=====FIFO WASN'T CLEAR====")
-          print("==========================")
+            print("==========================")
+            print("=====WARNING WARNING======")
+            print("=====FIFO WASN'T CLEAR====")
+            print("==========================")
         print(f"{self.sm.tx_fifo()=}")
 
         self.matrix = array.array("I", [0xFFFFFFFF] * 8)

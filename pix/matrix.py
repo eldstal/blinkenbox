@@ -39,14 +39,14 @@ class matrix:
         mem32[SM0_EXECCTRL] |= 0x0000001F  # set up status == FIFO_FULL
         Pin(ENABLE, Pin.OUT).off()
         self.sm = rp2.StateMachine(
-            0, matrix_pio, freq=25_000_000, out_base=Pin(DATA), sideset_base=Pin(LATCH)
+            0, matrix_pio, freq=1_000_000, out_base=Pin(DATA), sideset_base=Pin(LATCH)
         )
         self.sm.active(1)
         
         #self.matrix = array.array("I", [0xFFFFFFFF] * 8)
 
-        self.dimmer = PWM(ENABLE, freq=self.freq, duty_u16=0)
-        self.dim()
+        #self.dimmer = PWM(ENABLE, freq=self.freq, duty_u16=0)
+        #self.dim()
         #self.update()
 
     def update(self):

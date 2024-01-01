@@ -29,8 +29,8 @@ dma_chan.READ_ADDR_REG = FRAMEBUF_ADDR
 #dma_chan.WRITE_ADDR_REG = FAKE_PIO_ADDR
 dma_chan.WRITE_ADDR_REG = devs.PIO0_TX
 
-dma_chan.TRANS_COUNT_REG = len(FRAMEBUF) // 4   # One frame per xfer
-#dma_chan.TRANS_COUNT_REG = 8
+#dma_chan.TRANS_COUNT_REG = len(FRAMEBUF) // 4   # One frame per xfer
+dma_chan.TRANS_COUNT_REG = 8
 
 def hard_clear():
   for w in range(8):
@@ -54,6 +54,7 @@ def flip():
   # Later: Write only when DREQ_PIO0_TX0
 
   dma_chan.CTRL_TRIG_REG=0
+  dma_chan.READ_ADDR_REG = FRAMEBUF_ADDR
   dma_chan.CTRL_TRIG.DATA_SIZE=2    # One 32b word at a time
   dma_chan.CTRL_TRIG.INCR_READ = 1  # Eat the buffer
   #dma_chan.CTRL_TRIG.INCR_READ = 0  # Don't Eat the buffer
@@ -61,7 +62,7 @@ def flip():
   dma_chan.CTRL_TRIG.RING_SEL = 0 # Wrap the READ buf
   #dma_chan.CTRL_TRIG.RING_SIZE = int(math.log2(len(FRAMEBUF))) # Buffer size must be a power of two
   #dma_chan.CTRL_TRIG.RING_SIZE = 5 # Probably correct, according to legend
-  dma_chan.CTRL_TRIG.RING_SIZE = 5
+  dma_chan.CTRL_TRIG.RING_SIZE = 0  # But wrapping at 32 bytes doesn't work, so we just start the transfer manually. Whatever.
 
   dma_chan.CTRL_TRIG.IRQ_QUIET = 1
   #dma_chan.CTRL_TRIG.TREQ_SEL = 0x3F # Send fast as fuck
@@ -103,6 +104,10 @@ def dma_test():
   while True:
     time.sleep(1)
 
+def dump_fb():
+    for a in range(FRAMEBUF_ADDR, FRAMEBUF_ADDR+32, 4):
+      w = machine.mem32[a]
+      print(f"{w:08x}")
 
 #MAT.clear()
 #MAT.update()
@@ -114,20 +119,27 @@ for i in range(len(FRAMEBUF)):
   #FRAMEBUF[i] = 0xFF
 #FRAMEBUF[0] = 0x0F
 
+#for i in range(len(FRAMEBUF)//2):
+#  FRAMEBUF[i] = 0
+
 #for w in range(8):
 #  data = 0xFFFFFF00 + w
 #  machine.mem32[FRAMEBUF_ADDR] = data
 #  time.sleep(0.05)
 
+
 idx = 0
 
 flip()
+dump_fb()
+
 while True:
   flip()
   FRAMEBUF[idx] += 1
+  #if (idx == 1): dump_fb()
   FRAMEBUF[16+idx] -= 1
   idx = (idx + 1) % 16
-  #time.sleep(0.1)
+  #time.sleep(0.05)
 
 while True:
   # One full manual frame

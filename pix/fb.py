@@ -1,6 +1,7 @@
 import matrix
 import array
 import uctypes
+import micropython
 
 from machine import Timer
 from machine import mem32
@@ -80,7 +81,7 @@ class Framebuf:
     ])
 
     # Push frames to PIO periodically
-    #self.start_auto_dma()
+    self.start_auto_dma()
 
     # Swap framebuffer at set intervals
     #self.autoflip()
@@ -166,8 +167,9 @@ class Framebuf:
     self.set_frame(self.flip_phase)
 
   def start_auto_dma(self):
-    freq = 1e1
-    self.dma_tim.init(freq=freq, mode=Timer.PERIODIC, callback=lambda t:self.dma_flip())
+    freq = 6e1
+    #self.dma_tim.init(freq=freq, mode=Timer.PERIODIC, callback=lambda t: micropython.schedule(self.dma_flip, (1,)))
+    self.dma_tim.init(freq=freq, mode=Timer.PERIODIC, callback=lambda t: self.dma_flip())
 
 
   
@@ -187,7 +189,7 @@ class Framebuf:
     # One frame per transfer
     self.dma_chan.TRANS_COUNT_REG = 8
 
-  def dma_flip(self):
+  def dma_flip(self, dc=None):
     while self.dma_chan.CTRL_TRIG.BUSY:
       time.sleep(0.001)
 
@@ -200,16 +202,17 @@ class Framebuf:
     # DATA_SIZE = 2 (word)
     # RING_SEL = 0 (loop read)
     # RING_SIZE = log2(FRAMEBUF_SIZE)
-    # 
-    # Now: TREQ 0x3F for full fucking speeeed
-    # Later: Write only when DREQ_PIO0_TX0
+    # TREQ_SEL = Write only when DREQ_PIO0_TX0
 
     self.dma_chan.CTRL_TRIG_REG=0
     self.dma_chan.CTRL_TRIG.DATA_SIZE=2    # One 32b word at a time
     self.dma_chan.CTRL_TRIG.INCR_READ = 1  # Eat the READ buffer
     self.dma_chan.CTRL_TRIG.INCR_WRITE = 0 # Only one target word
     self.dma_chan.CTRL_TRIG.RING_SEL = 0   # Wrap the READ buf
-    self.dma_chan.CTRL_TRIG.RING_SIZE = 5  # Wrap on 32 bytes (1 frame)
+
+    # Ideally, we'd wrap on 32 bytes (ring_size=5), but the DMA controller goes craaaazy
+    #self.dma_chan.CTRL_TRIG.RING_SIZE = 5  # Wrap on 32 bytes (1 frame)
+    self.dma_chan.CTRL_TRIG.RING_SIZE = 0  # Don't wrap. We just reset the source address each flip
 
     self.dma_chan.CTRL_TRIG.IRQ_QUIET = 1
     self.dma_chan.CTRL_TRIG.TREQ_SEL = devs.DREQ_PIO0_TX0 # Send only when the PIO is ready to receive

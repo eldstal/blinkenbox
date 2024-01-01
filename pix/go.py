@@ -10,19 +10,16 @@ fb = fb.Framebuf()
 #fb.flip()
 
 fb.clear()
-fb.dma_flip()
+#fb.dma_flip()
 
 # A nice little gradient
 for x in range(16):
   for y in range(16):
-    if (x < 8):
-      fb.set(x, y, x%2)
-    else:
-      fb.set(x, y, x%3 > 0)
+    fb.set(x, y, 1)
 
-fb.dma_flip()
+#fb.dma_flip()
 
-while True:
-  time.sleep(1)
+#while True:
+#  time.sleep(1)
 
 snake.main(fb)
