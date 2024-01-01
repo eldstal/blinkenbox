@@ -20,5 +20,6 @@ if __name__ == "__main__":
         print({len(frame)})
         frame = struct.pack("HH", 1, len(frame)) + frame
         print(frame)
+        time.sleep(1)
         sock.send(frame)
         sock.close()

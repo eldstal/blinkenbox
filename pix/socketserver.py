@@ -4,9 +4,7 @@ from time import sleep
 import machine
 import socket
 import fb
-
-SSID = "37C3-open"
-PASSWORD = None
+import config
 
 errtable = {
     2:"unknown",
@@ -18,7 +16,7 @@ errtable = {
     network.STAT_GOT_IP : "GOT IP"
 }
 
-class webserver:
+class socketserver:
     def __init__(self, ssid, framebuf, password=None):
         self.framebuf = framebuf
         self.ip = None
@@ -37,13 +35,13 @@ class webserver:
 
         self.wlan = network.WLAN(network.STA_IF)
         self.wlan.active(True) 
-        self.wlan.connect(SSID,None)
+        self.wlan.connect(self.ssid, self.password)
         while not self.wlan.isconnected():
-            print(f"trying to join wifi {SSID}, status {errtable[self.wlan.status()]}")
+            print(f"trying to join wifi {self.ssid}, status {errtable[self.wlan.status()]}")
             if self.wlan.status() == network.STAT_CONNECT_FAIL:
-                self.wlan.connect(SSID,None)
+                self.wlan.connect(self.ssid, self.password)
             if self.wlan.status() == network.STAT_NO_AP_FOUND:
-                self.wlan.connect(SSID,None)
+                self.wlan.connect(self.ssid, self.password)
             sleep(1)
         self.ip, self.netmask, self.gateway, self.dns = self.wlan.ifconfig()
 
@@ -63,7 +61,11 @@ class webserver:
         while True:
             client = self.s.accept()[0]
             data = client.recv(2048)
-            cmd, size = struct.unpack("HH", data[:4])
+            client
+            try:
+                cmd, size = struct.unpack("HH", data[:4])
+            except ValueError:
+                continue
             print(f"cmd:{cmd}, size{size}, len(data[4:]){len(data[4:])}")
             while len(data[4:]) < size:
                 data += client.recv(2048)
@@ -105,7 +107,7 @@ class handle_binframe:
         for y,row in enumerate(struct.unpack("h"*16, data)):
             for x in range(16):
                 self.fb.set(x, y, (row>>(15-x))&1)
-                print(f"x{x}, y{y}, val{(row>>(15-x))&1}")
+                #print(f"x{x}, y{y}, val{(row>>(15-x))&1}")
         
         self.fb.flip()
         return 
@@ -113,10 +115,11 @@ class handle_binframe:
 if __name__ == "__main__":
     try:
         frame = fb.Framebuf()
-        w = webserver(SSID, frame)
-        w.register(handle_binframe(frame))
-        w.connect()
-        print(w.ip)
-        w.serve()
+        frame.matrix.dim(0.05)
+        s = socketserver(config.ssid, frame, config.password)
+        s.register(handle_binframe(frame))
+        s.connect()
+        print(s.ip)
+        s.serve()
     except KeyboardInterrupt:
         machine.reset()
