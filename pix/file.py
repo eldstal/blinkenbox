@@ -155,7 +155,7 @@ if __name__ == "__main__":
     try:
         if args.command == "decode":
             out = fkdecode(stream(args.input), animated=False, bytewise=False)
-            args.output.write(out)
+            args.output.write(bytes(out))
         else:
             animated = args.animated or len(args.input) > 1
             bpp = 1 if args.one_bpp else 8

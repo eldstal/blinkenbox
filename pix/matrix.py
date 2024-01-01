@@ -20,8 +20,8 @@ def matrix_pio():
     label("next_word")
     set(x, 31)                  .side(0b00)
     label("bit_loop")
-    out(pins, 1)                .side(0b00) [2]
-    jmp(x_dec, "bit_loop")      .side(0b10) [2]
+    out(pins, 1)                .side(0b00)
+    jmp(x_dec, "bit_loop")      .side(0b10)
     jmp(y_dec, "next_word")     .side(0b00)
     nop()                       .side(0b01)
 

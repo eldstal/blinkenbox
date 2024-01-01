@@ -85,7 +85,7 @@ def main(display):
     while True:
         GAME.step()
         GAME.draw(display)
-        time.sleep(0.1)
+        #time.sleep(0.1)
 
         if GAME.gameover:
             GAME.start()

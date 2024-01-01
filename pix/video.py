@@ -18,7 +18,7 @@ class Video:
         self.fb.clear()
         for i in range(256):
             y, x = divmod(i, 16)
-            self.fb.set(x, y, next(self.src))
+            self.fb.set(x, y, next(self.src)*255)
         self.fb.flip()
         
 

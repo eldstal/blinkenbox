@@ -50,25 +50,29 @@ class Framebuf:
     self.frame_tim = Timer()
     self.dma_tim = Timer()
 
-    self.matrix = matrix.matrix(brightness=0.30)
+    self.matrix = matrix.matrix(brightness=0.2)
     
     # Depth (in image frames) of PWM modulation
     # Increase for better bit depth, but using more RAM (32B per frame)
-    self.n_frames = 8
+    self.n_frames = 1
 
-    self.fb = bytearray(32*self.n_frames)
-    self.FRAME_BASE_ADDR = uctypes.addressof(self.fb)
+    self.buffer_a = bytearray(32*self.n_frames)
+    self.FB_A_ADDR = uctypes.addressof(self.buffer_a)
 
-    # A pointer to the frame address,
+    self.buffer_b = bytearray(32*self.n_frames)
+    self.FB_B_ADDR = uctypes.addressof(self.buffer_b)
+
+
+    # A pointer to the front buffer address,
     # which the trigger dma needs to copy to the main dma
     self.fb_ptr = bytearray(4)
-    self.FRAME_BASE_PTR_ADDR = uctypes.addressof(self.fb_ptr)
-    mem32[self.FRAME_BASE_PTR_ADDR] = self.FRAME_BASE_ADDR
-    
-    #self.start()
-    #self.flip_phase = 0
-    #self.bit_depth = 4
-    #self.set_frame(0)
+    self.FRONT_BUFFER_PTR_ADDR = uctypes.addressof(self.fb_ptr)
+
+
+    self.FRONT_BUFFER = self.FB_A_ADDR
+    self.BACK_BUFFER = self.FB_B_ADDR
+    mem32[self.FRONT_BUFFER_PTR_ADDR] = self.FRONT_BUFFER
+
 
     
     
@@ -79,29 +83,14 @@ class Framebuf:
     # The last entry is the highest supported intensity (on)
     # Only the lowest n_frames bits will be used (and looped)
     self.pwm = array.array("L", [
-        0x00,   # 0/8
-        0x10,   # 1/8
-        0x11,   # 2/8
-        0x91,   # 3/8
-        0x55,   # 4/8
-        0x5B,   # 5/8
-        0x77,   # 6/8
-        0x7F,   # 7/8
-        0xFF,   # 8/8
-    ])
-
-
-    # tick -> frame number to show
-    self.intervals = array.array("L",[
-      1,
-      2,
-      4,
-      8,
-      16,
-      32,
-
-      64,
-      128
+        0x000000,
+        0x000001,
+        0x010101,
+        0x050505,
+        0x151515,
+        0x313313,
+        0x707077,
+        0xFFFFFF,
     ])
 
     self.dma_setup()
@@ -109,38 +98,13 @@ class Framebuf:
     # Push frames to PIO periodically
     self.start_auto_dma()
 
-    # Swap framebuffer at set intervals
-    #self.autoflip()
 
   def clear(self):
     for f in range(self.n_frames):
       for w in range(8):
-        #self.fb[f][w] = 0
-        word_addr = self.FRAME_BASE_ADDR + f*32 + w*4
+        word_addr = self.BACK_BUFFER + f*32 + w*4
         mem32[word_addr] = 0
 
-  def remap_intensity(self, intensity):
-
-    imax = 2**self.bit_depth
-
-    intensity = min(intensity, imax)
-
-    #norm_intensity = intensity
-    # Rescale to 0...255
-    norm_intensity = int(256 * intensity / imax)
-
-    norm_intensity = max(0, norm_intensity)
-    norm_intensity = min(255, norm_intensity)
-
-    # Use the LUT to delinearize the color curve
-    mapped_intensity = REMAP[norm_intensity]
-    mapped_intensity = 0xFFFF - mapped_intensity
-
-    # Cut off the unneeded bits in the LUT
-    pwm_signal = mapped_intensity >> (16-self.bit_depth)
-    #pwm_signal = mapped_intensity & (imax-1)
-
-    return pwm_signal
 
   # Intensity between 0 and 255 (integer)
   def intensity_to_pwm(self, intensity):
@@ -180,46 +144,31 @@ class Framebuf:
 
 
     for f in range(self.n_frames):
-      word_addr = self.FRAME_BASE_ADDR + f*32 + w*4
+      word_addr = self.BACK_BUFFER + f*32 + w*4
 
       if pwm_bits >> f & 1 == 1:
-        #self.fb[f][w] |= (1 << b)
         mem32[word_addr] |= (1 << b)
       else:
-        #self.fb[f][w] &= (1 << b) ^ 0xFFFFFFFF
         mem32[word_addr] &= (1 << b) ^ 0xFFFFFFFF
 
 
-  def autoflip(self):
-
-    duration = self.intervals[self.flip_phase]
-
-    freq = 1e4 // (duration)
-    freq = int(freq * 1)
-
-    self.frame_tim.init(freq=freq, mode=Timer.ONE_SHOT, callback=lambda t:self.autoflip())
-
-    self.flip_phase = (self.flip_phase + 1) % self.bit_depth
-
-    #self.set_frame(self.flip_phase)
-
   def start_auto_dma(self):
-    freq = 1e1
-    #self.dma_tim.init(freq=freq, mode=Timer.PERIODIC, callback=lambda t: micropython.schedule(self.dma_flip, (1,)))
-    #self.dma_tim.init(freq=freq, mode=Timer.PERIODIC, callback=lambda t: self.dma_flip())
-
     # Kick start the trigger_dma, which will start the main_dma frame pump
     # Once main_dma finishes one set of frames, the trigger_dma will restart etc etc etc
     self.trigger_dma_chan.M0_CTRL_TRIG.EN = 1   # Go!
 
 
-  
-  def push(self, x):
-    #self.matrix.set_matrix(array.array("I", self.fb[x]))
-    #self.matrix.update()
-    #self.set_frame(x)
-    self.dma_flip()
+  def flip(self):
+    if self.FRONT_BUFFER == self.FB_A_ADDR:
+      self.FRONT_BUFFER = self.FB_B_ADDR
+      self.BACK_BUFFER = self.FB_A_ADDR
+    else:
+      self.FRONT_BUFFER = self.FB_A_ADDR
+      self.BACK_BUFFER = self.FB_B_ADDR
 
+    # Instruct the trigger DMA to start showing the new front buffer
+    mem32[self.FRONT_BUFFER_PTR_ADDR] = self.FRONT_BUFFER
+  
   def dma_setup(self):
 
     dma_chan_main = 0
@@ -271,7 +220,7 @@ class Framebuf:
     self.trigger_dma_chan.M0_WRITE_ADDR_REG = self.main_dma_trigger_reg
 
     # Copy the framebuffer address, so that the pixel push starts from there
-    self.trigger_dma_chan.M0_READ_ADDR_REG = self.FRAME_BASE_PTR_ADDR
+    self.trigger_dma_chan.M0_READ_ADDR_REG = self.FRONT_BUFFER_PTR_ADDR
 
    # All the frames in one go!!
     self.trigger_dma_chan.M0_TRANS_COUNT_REG = 1
@@ -286,12 +235,3 @@ class Framebuf:
     self.trigger_dma_chan.M0_CTRL_TRIG.TREQ_SEL = 0x3F    # as fast as fast can be
     self.trigger_dma_chan.M0_CTRL_TRIG.CHAIN_TO = dma_chan_trig  # Don't trigger any other channel
 
-
-
-  def dma_flip(self, dc=None):
-    while self.main_dma_chan.M3_CTRL.BUSY:
-      time.sleep(0.001)
-
-
-    # On alias mode 3, the write to READ_ADDR_REG is what triggers the DMA channel to start.
-    self.main_dma_chan.M3_READ_ADDR_TRIG_REG = self.FRAME_BASE_ADDR
