@@ -32,13 +32,13 @@ def fkencode(data, bpp=8, compress=True, animated=False):
     yield from body
 
 
-def fkopen(filename):
+def fkopen(filename, **options):
     """Open a frekvensfile as a stream"""
     with open(filename, "rb") as f:
-        yield from fkdecode(stream(f))
+        yield from fkdecode(stream(f), **options)
 
 
-def fkdecode(data, bytewise=None, compressed=None, animated=None):
+def fkdecode(data, bytewise=None, compressed=None, animated=None, brightness_hack=False):
     """read frekvensfile header and configure output stream"""
 
     head = next(data)
@@ -54,7 +54,8 @@ def fkdecode(data, bytewise=None, compressed=None, animated=None):
     if compressed:
         data = extract_rle(data)
     if bytewise:  # TODO: fix for brighthack
-        data = fullbright(data)
+        if not brightness_hack:
+            data = fullbright(data)
     else:
         data = decode_1bpp(data)
     yield from data
@@ -85,7 +86,6 @@ def encode_1bpp(data):
         print(b, end="")
         byte |= b << (7 - (i % 8))
         if i > 0 and i % 8 == 7:
-            print("")
             yield byte
             byte = 0
 

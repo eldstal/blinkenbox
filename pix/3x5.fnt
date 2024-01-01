@@ -1,0 +1,29 @@
+
+
+fnt file
+
+header 1 byte
+
+
+0010 0011 
+1st nibble: bytes per char
+second nibble: bits per row
+
+characters, in order:
+ABCDEFGHIJKLMNOPQRSTUVXYZ0123456789
+
+3x5 font:
+232bed6bae39236b6e79e779e4392b5bed2492126a5bad49275eed5ffd7b6f7be47b7b6bad388e74925b6f5b6a5b7d5aad5b5272a77bef2c972a57638e17c9798e15aa72a42aaa2ad4
+
+.: 0002
+,: 0014
+!: 2482
+?: 2a42
+/: 12a4
++: 05d0
+-: 01c0
+*: 0aa8
+#: 23ba
+(: 1491
+): 4494
+

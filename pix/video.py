@@ -1,4 +1,3 @@
-from fb import Framebuf
 from file import fkopen
 from time import sleep
 
@@ -9,7 +8,7 @@ Display frekvensimages.
 
 class Video:
     def __init__(self, source, fb=None, framerate = 10):
-        self.fb = fb or Framebuf()
+        self.fb = fb
         self.src = source
         self.frametime = 1/ framerate
 
@@ -29,6 +28,7 @@ class Video:
 
 
 if __name__ == "__main__":
+    from fb import Framebuf
     f = Framebuf()
     f.clear()
     f.flip()
