@@ -63,7 +63,7 @@ class Snake:
             #intensity_aft = 32 - intensity
             x,y = xy
             #display.set(x, y, intensity_aft)
-            display.set(x, y, 64)
+            display.set(x, y, 32)
         for x,y in [self.pos]:
             display.set(x, y, 255)
         #display.dma_flip()

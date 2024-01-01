@@ -13,9 +13,8 @@ fb.clear()
 #fb.dma_flip()
 
 # A nice little gradient
-#for x in range(16):
-#  for y in range(16):
-#    fb.set(x, y, x*16+y)
+#for i in range(256):
+#    fb.set(i%16, i//16, i)
 
 #fb.dma_flip()
 

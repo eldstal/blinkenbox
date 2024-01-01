@@ -50,11 +50,11 @@ class Framebuf:
     self.frame_tim = Timer()
     self.dma_tim = Timer()
 
-    self.matrix = matrix.matrix(brightness=0.50)
+    self.matrix = matrix.matrix(brightness=0.30)
     
     # Depth (in image frames) of PWM modulation
     # Increase for better bit depth, but using more RAM (32B per frame)
-    self.n_frames = 4
+    self.n_frames = 8
 
     self.fb = bytearray(32*self.n_frames)
     self.FRAME_BASE_ADDR = uctypes.addressof(self.fb)
@@ -79,11 +79,15 @@ class Framebuf:
     # The last entry is the highest supported intensity (on)
     # Only the lowest n_frames bits will be used (and looped)
     self.pwm = array.array("L", [
-        0x0,   # 0/4
-        0x1,   # 1/4
-        0x5,   # 2/4
-        0x7,   # 3/4
-        0xF,   # 4/4
+        0x00,   # 0/8
+        0x10,   # 1/8
+        0x11,   # 2/8
+        0x91,   # 3/8
+        0x55,   # 4/8
+        0x5B,   # 5/8
+        0x77,   # 6/8
+        0x7F,   # 7/8
+        0xFF,   # 8/8
     ])
 
 
