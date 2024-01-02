@@ -10,7 +10,20 @@ from machine import mem32
 import rp_devices as devs
 
 # Native module!!
-import framebuddy
+# Needs frame
+try:
+  import framebuddy
+  HAVE_FRAMEBUDDY=True
+except:
+  print("------------")
+  print("WARNING:")
+  print("The native module framebuddy.mpy could not be loaded")
+  print("fb.py will fall back to plain python pixel setting, and your graphics performance")
+  print("will suffer greatly. Try uploading framebuddy.mpy to the board as well, it should")
+  print("improve things a lot!")
+  print("------------")
+  HAVE_FRAMEBUDDY=False
+
 
 class Framebuf:
 
@@ -81,31 +94,26 @@ class Framebuf:
 
     return self.pwm[step]
 
-
-
-  # Intensity is [0, 255]
   def set(self, x, y, intensity=255):
-
-    pwm_bits = self.intensity_to_pwm(intensity)
-
-    x = x & 0xF
-    y = y & 0xF
-
-    # Index into our framebuffer (word-width)
-    w = 0
-
-    # Right half of frame
-    if (x >=8): w+=4
-
-    # Vertical position
-    w += y//4
-
-    b = (y%4)*8 + x%8
-
-    framebuddy.setbits(self.BACK_BUFFER, self.n_frames, w, b, pwm_bits)
+    if HAVE_FRAMEBUDDY:
+      self._native_set(x, y, intensity)
+    else:
+      self._python_set(x, y, intensity)
 
   # Intensity is [0, 255]
-  def slow_set(self, x, y, intensity=255):
+  def _native_set(self, x, y, intensity=255):
+
+    if not HAVE_FRAMEBUDDY:
+      self._python_set(x, y, intensity)
+      return
+    #pwm_bits = self.intensity_to_pwm(intensity)
+
+    pwm_bits = 0xFFFF
+    framebuddy.transform_setbits(self.BACK_BUFFER, self.n_frames, x, y, pwm_bits)
+
+  
+  # Intensity is [0, 255]
+  def _python_set(self, x, y, intensity=255):
 
     pwm_bits = self.intensity_to_pwm(intensity)
 
