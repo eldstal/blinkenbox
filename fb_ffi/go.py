@@ -36,13 +36,25 @@ def with_py_set(fb):
      # A pretty little gradient
   for x in range(len(intensities)):
     for y in range(0,16,2):
-      fb.slow_set(x, y, intensities[x])
+      fb._python_set(x, y, intensities[x])
 
     for y in range(1,16,2):
-      fb.slow_set(x, y, intensities[::-1][x])
+      fb._python_set(x, y, intensities[::-1][x])
+
 
 @timed_function
 def with_native_set(fb):
+     # A pretty little gradient
+  for x in range(len(intensities)):
+    for y in range(0,16,2):
+      fb._native_set(x, y, intensities[x])
+
+    for y in range(1,16,2):
+      fb._native_set(x, y, intensities[::-1][x])
+
+
+@timed_function
+def with_auto_set(fb):
      # A pretty little gradient
   for x in range(len(intensities)):
     for y in range(0,16,2):
@@ -50,8 +62,6 @@ def with_native_set(fb):
 
     for y in range(1,16,2):
       fb.set(x, y, intensities[::-1][x])
-
-
 
 
 while True:
@@ -63,4 +73,7 @@ while True:
   fb.flip()
   fb.clear()
 
+  with_auto_set(fb)
+  fb.flip()
+  fb.clear()
 
