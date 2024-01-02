@@ -106,9 +106,8 @@ class Framebuf:
     if not HAVE_FRAMEBUDDY:
       self._python_set(x, y, intensity)
       return
-    #pwm_bits = self.intensity_to_pwm(intensity)
+    pwm_bits = self.intensity_to_pwm(intensity)
 
-    pwm_bits = 0xFFFF
     framebuddy.transform_setbits(self.BACK_BUFFER, self.n_frames, x, y, pwm_bits)
 
   

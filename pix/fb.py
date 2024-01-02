@@ -9,6 +9,25 @@ from machine import mem32
 
 import rp_devices as devs
 
+<<<<<<< HEAD
+=======
+# Native module!!
+# Needs frame
+try:
+  import framebuddy
+  HAVE_FRAMEBUDDY=True
+except:
+  print("------------")
+  print("WARNING:")
+  print("The native module framebuddy.mpy could not be loaded")
+  print("fb.py will fall back to plain python pixel setting, and your graphics performance")
+  print("will suffer greatly. Try uploading framebuddy.mpy to the board as well, it should")
+  print("improve things a lot!")
+  print("------------")
+  HAVE_FRAMEBUDDY=False
+
+
+>>>>>>> New native framebuffer logic included into pix
 class Framebuf:
 
   def __init__(self):
@@ -19,7 +38,7 @@ class Framebuf:
     
     # Depth (in image frames) of PWM modulation
     # Increase for better bit depth, but using more RAM (32B per frame)
-    self.n_frames = 1
+    self.n_frames = 24
 
     self.buffer_a = bytearray(32*self.n_frames)
     self.FB_A_ADDR = uctypes.addressof(self.buffer_a)
@@ -37,19 +56,6 @@ class Framebuf:
     self.FRONT_BUFFER = self.FB_A_ADDR
     self.BACK_BUFFER = self.FB_B_ADDR
     mem32[self.FRONT_BUFFER_PTR_ADDR] = self.FRONT_BUFFER
-
-
-    #
-    # Pixel mapping memo table
-    # This maps an x/y of a pixel to the proper word and bit in one of the frame buffers
-    #
-    self.word_table = [ [ 0 for x in range(16) ] for y in range(16) ]
-    self.bit_table = [ [ 0 for x in range(16) ] for y in range(16) ]
-    for y in range(16):
-      for x in range(16):
-        self.word_table[y][x] = y//4 + (4 * (x >=8))
-        self.bit_table[y][x] = (y%4)*8 + x%8
-    
 
 
     # PWM bit patterns for a pixel at a given intensity
@@ -91,26 +97,25 @@ class Framebuf:
 
     return self.pwm[step]
 
-
-  # Given an x/y coordinate of a pixel
-  # returns the corresponding word index and bit index
   def set(self, x, y, intensity=255):
-
-    pwm_bits = self.intensity_to_pwm(intensity)
-
-    w = self.word_table[y][x]
-    b = self.bit_table[y][x]
-    
-    for f in range(self.n_frames):
-      word_addr = self.BACK_BUFFER + f*32 + w*4
-
-      bit_value = ((pwm_bits >> f) & 1) << b
-
-      mem32[word_addr] = mem32[word_addr] & ((1 << b) ^ 0xFFFFFFFF) | bit_value
-        
+    if HAVE_FRAMEBUDDY:
+      self._native_set(x, y, intensity)
+    else:
+      self._python_set(x, y, intensity)
 
   # Intensity is [0, 255]
-  def slow_set(self, x, y, intensity=255):
+  def _native_set(self, x, y, intensity=255):
+
+    if not HAVE_FRAMEBUDDY:
+      self._python_set(x, y, intensity)
+      return
+    pwm_bits = self.intensity_to_pwm(intensity)
+
+    framebuddy.transform_setbits(self.BACK_BUFFER, self.n_frames, x, y, pwm_bits)
+
+  
+  # Intensity is [0, 255]
+  def _python_set(self, x, y, intensity=255):
 
     pwm_bits = self.intensity_to_pwm(intensity)
 
