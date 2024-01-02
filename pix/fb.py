@@ -9,8 +9,6 @@ from machine import mem32
 
 import rp_devices as devs
 
-<<<<<<< HEAD
-=======
 # Native module!!
 # Needs frame
 try:
@@ -27,7 +25,6 @@ except:
   HAVE_FRAMEBUDDY=False
 
 
->>>>>>> New native framebuffer logic included into pix
 class Framebuf:
 
   def __init__(self):
