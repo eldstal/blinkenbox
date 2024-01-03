@@ -1,3 +1,5 @@
 settings.toml
 __pycache__
 config.py
+test.js
+pixi.min.js

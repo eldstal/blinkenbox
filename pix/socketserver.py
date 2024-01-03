@@ -60,20 +60,22 @@ class socketserver:
         self.open_socket()
         while True:
             client = self.s.accept()[0]
-            data = client.recv(2048)
-            client
-            try:
-                cmd, size = struct.unpack("HH", data[:4])
-            except ValueError:
-                continue
-            print(f"cmd:{cmd}, size{size}, len(data[4:]){len(data[4:])}")
-            while len(data[4:]) < size:
-                data += client.recv(2048)
+            while True:
+                data = client.recv(4)
+                try:
+                    cmd, size = struct.unpack("HH", data[:4])
+                except ValueError:
+                    break
                 print(f"cmd:{cmd}, size{size}, len(data[4:]){len(data[4:])}")
-            try:
-                self.handler[cmd].handle(data[4:])
-            except KeyError:
-                print(f"no handler for cmd{cmd}")
+                while len(data[4:]) < size:
+                    data += client.recv(size-len(data[4:]))
+                    print(f"cmd:{cmd}, size{size}, len(data[4:]){len(data[4:])}")
+                try:
+                    self.handler[cmd].handle(data[4:])
+                except KeyError:
+                    print(f"no handler for cmd{cmd}")
+                    break
+            print("reset")
             client.close()
     
     def register(self, handler):

@@ -7,10 +7,20 @@ import config
 
 app = FastAPI()
 
+def connect():
+    sock = socket.socket(
+    socket.AF_INET,
+    socket.SOCK_STREAM)
+    sock.connect((config.ip, config.port))  
+    return sock
+
+sock = connect()
+
 def buildPackage(cmd, data):
     return struct.pack("HH", cmd, len(data)) + data
 
 def sendFrame(frame):
+    global sock
     print()
     binframe = bytearray()
     for y, row in frame.items():
@@ -23,13 +33,12 @@ def sendFrame(frame):
         print()
     print(binframe)
     print()
-
-    sock = socket.socket(
-    socket.AF_INET,
-    socket.SOCK_STREAM)
-    sock.connect((config.ip, config.port))
-    sock.send(buildPackage(1,binframe))
-    sock.close()
+    
+    try:
+        sock.send(buildPackage(1,binframe))
+    except ConnectionResetError:
+        sock.close()
+        sock = connect()
 
 @app.get("/")
 async def get():
