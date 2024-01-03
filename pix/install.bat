@@ -9,3 +9,4 @@ mpremote fs cp framebuddy.mpy :framebuddy.mpy
 mpremote reset
 timeout /t 2
 mpremote run video.py
+rem mpremote run go.py

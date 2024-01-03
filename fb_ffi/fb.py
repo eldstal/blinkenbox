@@ -2,7 +2,6 @@ import matrix
 import array
 import uctypes
 import micropython
-import time
 
 from machine import Timer
 from machine import mem32
@@ -25,17 +24,23 @@ except:
   HAVE_FRAMEBUDDY=False
 
 
+class LED_MODE:
+  PWM = 0,     # Duty cycle
+  BCM32 = 1,   # Bit value, 5 bit depth
+  BCM64 = 2,   # Bit value, 5 bit depth
+
+
 class Framebuf:
 
   def __init__(self):
     self.frame_tim = Timer()
     self.dma_tim = Timer()
 
-    self.matrix = matrix.matrix(brightness=0.2)
+    self.matrix = matrix.matrix(brightness=0.3)
     
     # Depth (in image frames) of PWM modulation
     # Increase for better bit depth, but using more RAM (32B per frame)
-    self.n_frames = 24
+    self.n_frames = 32
 
     self.buffer_a = bytearray(32*self.n_frames)
     self.FB_A_ADDR = uctypes.addressof(self.buffer_a)
@@ -60,15 +65,39 @@ class Framebuf:
     # The last entry is the highest supported intensity (on)
     # Only the lowest n_frames bits will be used (and looped)
     self.pwm = array.array("L", [
-        0x000000,
-        0x000001,
-        0x010101,
-        0x050505,
-        0x151515,
-        0x313313,
-        0x707077,
-        0xFFFFFF,
+        0x00000000,
+        0x00000001,
+        0x01010101,
+        0x05050505,
+        0x15151515,
+        0x13313313,
+        0x70707077,
+        0xFFFFFFFF,
     ])
+
+    # Bit Code Modulation
+    # For bits abcde, return a word of abbccccddddddddeeeeeeeeeeeeeeee
+    self.bcm32 = array.array("L", [ 0 ]* 32)
+
+    # Number of copies of each bit
+    copies = [ 1, 2, 4, 8, 16 ]   # Expy
+    for i in range(32):
+      pattern = 0x0
+      for bit_index in range(len(copies)-1,-1,-1):
+        bit = (i >> bit_index) & 0x01
+
+        for n in range(copies[bit_index]):
+          pattern = (pattern << 1) | bit
+
+      self.bcm32[i] = pattern
+      #print(f"{i:02d} -> {pattern:>032b}")
+
+
+    # Load the pattern mapping table into the native frame generator
+    # This configures it to have all the grayscale levels we want!!
+    if HAVE_FRAMEBUDDY:
+      framebuddy.set_pattern_map(uctypes.addressof(self.bcm32), len(self.bcm32))
+    
 
     self.dma_setup()
 
@@ -93,28 +122,38 @@ class Framebuf:
     step = (intensity * n_steps) >> 8
 
     return self.pwm[step]
+  
+
+  # Intensity between 0 and 255 (integer)
+  def intensity_to_bcm(self, intensity, mapping):
+
+    # Range clamping [0,255]
+    intensity = intensity & 0xFF
+
+    n_steps = len(mapping)
+    step = (intensity * n_steps) >> 8
+
+    return mapping[step]
 
   def set(self, x, y, intensity=255):
+
+
     if HAVE_FRAMEBUDDY:
       self._native_set(x, y, intensity)
-    else:
-      self._python_set(x, y, intensity)
+      return
+
+    # Python fallback
+    pixel_bits = self.intensity_to_bcm(intensity, self.bcm32)
+    self._python_set(x, y, pixel_bits)
 
   # Intensity is [0, 255]
-  def _native_set(self, x, y, intensity=255):
+  def _native_set(self, x, y, pixel_bits=0xFF):
 
-    if not HAVE_FRAMEBUDDY:
-      self._python_set(x, y, intensity)
-      return
-    pwm_bits = self.intensity_to_pwm(intensity)
-
-    framebuddy.transform_setbits(self.BACK_BUFFER, self.n_frames, x, y, pwm_bits)
+    framebuddy.transform_setbits(self.BACK_BUFFER, self.n_frames, x, y, pixel_bits)
 
   
   # Intensity is [0, 255]
-  def _python_set(self, x, y, intensity=255):
-
-    pwm_bits = self.intensity_to_pwm(intensity)
+  def _python_set(self, x, y, pixel_bits=0xFF):
 
     x = x & 0xF
     y = y & 0xF
@@ -134,7 +173,7 @@ class Framebuf:
     for f in range(self.n_frames):
       word_addr = self.BACK_BUFFER + f*32 + w*4
 
-      if pwm_bits >> f & 1 == 1:
+      if pixel_bits >> f & 1 == 1:
         mem32[word_addr] |= (1 << b)
       else:
         mem32[word_addr] &= (1 << b) ^ 0xFFFFFFFF

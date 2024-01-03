@@ -5,27 +5,44 @@ import time
 import math
 
 
-fb = fb.Framebuf()
+disp = fb.Framebuf()
 
 #fb.set(12,5,1)
 #fb.flip()
 
-fb.clear()
-fb.flip()
+disp.clear()
+disp.flip()
 
 intensities = [ x*16 for x in range(16) ]
 
-# A nice little gradient
-for x in range(len(intensities)):
-  for y in range(0,16,2):
-    fb.set(x, y, intensities[x])
+def gradients():
+  while True:
 
-  for y in range(1,16,2):
-    fb.set(x, y, intensities[::-1][x])
+    # A nice little gradient
+    for x in range(64):
+      disp.set((x)%16, (x)//16, x*4, fb.LED_MODE.BCM64)
 
-fb.flip()
+    disp.flip()
 
-#while True:
-#  time.sleep(1)
+def swell(intensities):
+    for i in intensities:
+      for y in range(5):
+        for x in range(7):
+          disp.set(x, y, i)
+      disp.flip()
+      disp.clear()
 
-snake.main(fb)
+
+
+  
+  #if mode == fb.LED_MODE.PWM:
+  #  mode = fb.LED_MODE.BCM
+  #else:
+  #  mode = fb.LED_MODE.PWM
+
+while True:
+  #gradients()
+  swell(range(256))
+  swell(range(255,-1,-1))
+
+snake.main(disp)
