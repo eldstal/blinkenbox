@@ -57,13 +57,14 @@ class Snake:
 
     def draw(self, display):
         for i, xy in enumerate(self.history):
-            #intensity = len(self.history)-i
-            #if intensity > 31:
-            #    intensity = 31
-            #intensity_aft = 32 - intensity
+            intensity = len(self.history)-i
+            intensity_aft = 96 - (intensity*5)
             x,y = xy
-            #display.set(x, y, intensity_aft)
-            display.set(x, y, 32)
+
+            if intensity_aft < 8:
+                intensity_aft = 8
+            display.set(x, y, intensity_aft)
+            #display.set(x, y, 32)
         for x,y in [self.pos]:
             display.set(x, y, 255)
         display.flip()
@@ -86,7 +87,7 @@ def main(display):
     while True:
         GAME.step()
         GAME.draw(display)
-        #time.sleep(0.1)
+        time.sleep(0.03)
 
         if GAME.gameover:
             GAME.start()

@@ -36,7 +36,7 @@ class Framebuf:
     self.frame_tim = Timer()
     self.dma_tim = Timer()
 
-    self.matrix = matrix.matrix(brightness=0.3)
+    self.matrix = matrix.matrix(brightness=0.1)
     
     # Depth (in image frames) of PWM modulation
     # Increase for better bit depth, but using more RAM (32B per frame)
