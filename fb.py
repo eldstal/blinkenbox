@@ -198,8 +198,11 @@ class Framebuf:
   
   def dma_setup(self):
 
-    dma_chan_main = 0
-    dma_chan_trig = 1
+    # Hardcoded to not interfere with the wifi driver
+    # In Micropython 1.23, we'll be able to reserve an unused channel
+    # in the correct way!
+    dma_chan_main = 2
+    dma_chan_trig = 3
 
     self.dma = devs.DMA_DEVICE
     self.main_dma_chan = devs.DMA_CHANS[dma_chan_main]
