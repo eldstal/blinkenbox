@@ -1,0 +1,20 @@
+#!/bin/bash
+
+HEXFILE=${1}
+FNTFILE=${2}
+
+
+function die {
+  echo "$*"
+  exit 1
+}
+
+[ ! -f "${HEXFILE}" ] && die "hex2fnt <input.fnt.hex> <output.fnt>"
+[ -z "${FNTFILE}" ] && die "hex2fnt <input.fnt.hex> <output.fnt>"
+
+cat "${HEXFILE}" \
+    | tr -d '\n' \
+    | tr -d ' ' \
+    | xxd -r -p > "${FNTFILE}"
+
+xxd "${FNTFILE}"
