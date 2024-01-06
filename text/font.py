@@ -80,6 +80,24 @@ class Font:
         return ret
 
 
+    def sprite(self, text, brightness=128):
+        w = (self.width + self.spacing) * len(text)
+        h = self.height
+
+        ret = [ [0]*w for _ in range(h) ]
+
+        x = 0
+        y = 0
+
+        for char in text:
+            c = ord(char)
+            if c in self.charmap:
+                for cx,cy in self.charpixels(self.charmap[c]):
+                    ret[y+cy][x+cx] = brightness
+            x += self.width + self.spacing
+        
+        return ret
+
     # Directly places text on the framebuffer
     # Does not wrap text
     def draw(self, disp, x, y, text, brightness=128):

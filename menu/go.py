@@ -7,6 +7,8 @@ import buttons
 import menu
 import fb
 
+import font
+
 import demo_snake
 import demo_matrix
 
@@ -15,6 +17,8 @@ import demo_matrix
 if __name__ == "__main__":
 
     disp = fb.Framebuf()
+
+    txt = font.Font("3x5.fnt")
 
     mnu = menu.Menu( [         
         {
@@ -29,13 +33,7 @@ if __name__ == "__main__":
             "menu": [
                 {
                     "result": "snake",
-                    "icon": [
-                        [255,   0,    255,   96,  255 ],
-                        [96,    0,    96,    0,   96 ],
-                        [255,   0,    255,   0,   32 ],
-                        [96,    0,    96,    0,   16 ],
-                        [255,   96,   255,   0,   0 ],
-                    ]
+                    "icon": txt.sprite("SNEJK*2", 128)
 
                 },
 

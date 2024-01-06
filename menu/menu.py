@@ -42,6 +42,11 @@ class Menu:
         # Currently selected index
         self.index = 0
 
+        # Animation to show wide icons
+        # Min X offset, Max X offset, current X offset, current direction
+        self.animation = (0, 0, 0, 1)
+        self.animation_ticks = time.ticks_ms()
+
 
         pass
 
@@ -93,6 +98,8 @@ class Menu:
             self.index += 1
             self.index = self.index % len(self.tree)
         
+        # Bounce the icon, if it's too large
+        self.init_animation(self.tree[self.index]["icon"])
     
         if action == Action.BACK or action == Action.TIMEOUT:
             if self.stack == []:
@@ -107,8 +114,11 @@ class Menu:
 
             after_entry = self.tree[self.index]
 
-            # Animate!!
+            # Animate the transition
             self._swap_icon(disp, before_entry["icon"], after_entry["icon"], -16, 1)
+
+            # Bounce the icon if it's too large to fit
+            self.init_animation(after_entry["icon"])
 
             return False, None
             
@@ -126,6 +136,8 @@ class Menu:
 
                 # Animate!!
                 self._swap_icon(disp, before_entry["icon"], after_entry["icon"], 16, -1)
+
+                self.init_animation(after_entry["icon"])
 
                 return False, None
             
@@ -171,13 +183,62 @@ class Menu:
                 if x+dx > 15: continue
                 disp.set(x+dx, y+dy, row[dx])
 
+    def animate(self):
+
+        now = time.ticks_ms()
+        dt = time.ticks_diff(now, self.animation_ticks)
+
+        min_x, max_x, x, direction = self.animation
+
+
+        if x < min_x:
+            if dt > 500:        # Hold at the edge for a bit
+                x = min_x
+                direction = 1
+                self.animation_ticks = now
+        elif x > max_x:
+            if dt > 500:        # Hold at the edge for a bit
+                x = max_x
+                direction = -1
+                self.animation_ticks = now
+        else:
+            if dt > 60:
+                x += direction
+                self.animation_ticks = now
+
+        self.animation = (min_x, max_x, x, direction)
+    
+    def init_animation(self, icon):
+        w = max(len(row) for row in icon)
+
+        if w < 16:
+            self.animation = (0, 0, 0, 1)      # No animation
+        else:
+            self.animation = (0, w-16, 0, 1)
+
+        self.animation_ticks = time.ticks_ms()
+
+
     def draw(self, disp):
         entry = self.tree[self.index]
 
+        
+        
+        min_x, max_x, x_offset, direction = self.animation
+
+        disp.clear()
+
         x,y = self._center_icon(entry["icon"])
         
-        disp.clear()
-        self._draw_icon(disp, entry["icon"], x, y)
+        if min_x == max_x:
+            # Not animating
+            self._draw_icon(disp, entry["icon"], x, y)
+
+        else:
+            # Animating
+            self._draw_icon(disp, entry["icon"], -x_offset, y)
+            self.animate()
+
         disp.flip()
 
         return

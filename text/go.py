@@ -8,7 +8,7 @@ import time
 
 
 from fb import Framebuf
-import fontloader
+import font
 
 
 if __name__ == "__main__":
